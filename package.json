@@ -10,6 +10,7 @@
     "validate:strict": "node apps/production/src/cli.js validate --strict",
     "jobs": "node apps/production/src/cli.js jobs",
     "analyze-audio": "node apps/production/src/cli.js analyze-audio",
+    "direct-story": "node apps/production/src/cli.js direct-story",
     "test": "node --test"
   },
   "dependencies": { "ajv": "^8.17.1" }
