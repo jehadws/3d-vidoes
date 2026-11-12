@@ -83,3 +83,40 @@ test('provider uses structured output and reports useful HTTP errors without lea
   assert.equal(request.body.response_format.type, 'json_schema');
   assert.equal(request.options.headers.authorization, 'Bearer secret');
 });
+
+test('rejects generated plans that reference missing or unsupported assets', () => {
+  const assets = [
+    { id: 'living_room', type: 'environment' },
+    { id: 'protagonist', type: 'character', animations: ['idle'], expressions: ['curious'] }
+  ];
+  const valid = structuredClone(plan);
+  valid.shots[0].characters = [{ asset: 'protagonist', action: 'look around', expression: 'curious', animation: 'idle' }];
+  assert.equal(validateStoryPlan(ROOT, valid, transcript, assets).shot_count, 2);
+  const invalid = structuredClone(valid);
+  invalid.shots[0].characters[0].animation = 'flying';
+  assert.throws(() => validateStoryPlan(ROOT, invalid, transcript, assets), /unsupported animation/);
+  const missing = structuredClone(plan);
+  missing.shots[0].environment = 'unknown_room';
+  assert.throws(() => validateStoryPlan(ROOT, missing, transcript, assets), /unavailable environment/);
+});
+
+test('parses a successful structured provider response', async () => {
+  const fakeFetch = async (_url, options) => {
+    const body = JSON.parse(options.body);
+    assert.equal(body.response_format.json_schema.strict, true);
+    assert.equal(body.response_format.json_schema.schema.properties.schema_version.enum[0], 1);
+    return {
+      ok: true,
+      status: 200,
+      json: async () => ({ choices: [{ message: { content: JSON.stringify(plan) } }] })
+    };
+  };
+  const result = await requestStoryPlan({
+    prompt: 'Create a plan',
+    schema: { $schema: 'draft-07', type: 'object', properties: { schema_version: { const: 1, minLength: 1 } }, required: ['schema_version'], additionalProperties: false },
+    apiKey: 'test-key',
+    model: 'test-model',
+    fetchImpl: fakeFetch
+  });
+  assert.equal(result.beats.length, 2);
+});
