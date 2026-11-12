@@ -71,7 +71,7 @@ The command reads the script and analyzed transcript, inventories registered ass
 projects/pilot-video/story/shot-plan.json
 ```
 
-Optional flags: `--script FILE`, `--transcript FILE`, `--output FILE`, and `--director-model MODEL`. The API key is read only from the environment and is never written to the plan. A plan is rejected if it contains unknown narration references, duplicate IDs, invalid timing, overlapping beats/shots, missing beat coverage, or shots that do not represent every narration segment.
+Optional flags: `--script FILE`, `--transcript FILE`, `--output FILE`, and `--director-model MODEL`. Re-run validation after edits with `npm run validate:story -- --project pilot-video`. The API key is read only from the environment and is never written to the plan. A plan is rejected if it contains unknown narration references, duplicate IDs, invalid timing, overlapping beats/shots, unexplained gaps inside beats, missing beat coverage, shots that do not represent every narration segment, or invalid asset/animation/expression references.
 
 ### 3. Validate and inspect render jobs
 
