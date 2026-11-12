@@ -236,7 +236,7 @@ export async function directStory({ root, project, transcriptPath, scriptPath, o
   const validation = validateStoryPlan(root, plan, transcript);
   fs.mkdirSync(path.dirname(outputFile), { recursive: true });
   const tempFile = outputFile + '.tmp';
-  fs.writeFileSync(tempFile, JSON.stringify({ ...plan, generated_at: new Date().toISOString(), validation }, null, 2) + '\n', 'utf8');
+  fs.writeFileSync(tempFile, JSON.stringify(plan, null, 2) + '\n', 'utf8');
   fs.renameSync(tempFile, outputFile);
   return { outputFile, ...validation, duration_seconds: plan.duration_seconds };
 }
