@@ -68,6 +68,7 @@ function validateCoverage(plan, transcript) {
 
   const shotIds = new Set();
   const shotsByBeat = new Map([...beatIds].map((id) => [id, []]));
+  const shotSegmentIds = new Set();
   let previousShotEnd = 0;
   for (const shot of plan.shots) {
     if (shotIds.has(shot.id)) throw new StoryDirectorError('Duplicate shot id: ' + shot.id);
@@ -85,11 +86,15 @@ function validateCoverage(plan, transcript) {
     for (const id of shot.narration_segment_ids) {
       if (!segmentById.has(id)) throw new StoryDirectorError(shot.id + ' references unknown narration segment ' + id + '.');
       if (!beat.narration_segment_ids.includes(id)) throw new StoryDirectorError(shot.id + ' references narration outside its parent beat.');
+      shotSegmentIds.add(id);
     }
     shotsByBeat.get(shot.beat_id).push(shot);
   }
   for (const [beatId, shots] of shotsByBeat) {
     if (!shots.length) throw new StoryDirectorError(beatId + ' has no visual shots.');
+  }
+  if (segments.some((segment) => !shotSegmentIds.has(segment.id))) {
+    throw new StoryDirectorError('Every narration segment must be represented by at least one shot.');
   }
   if (Math.abs(plan.duration_seconds - duration) > 0.1) throw new StoryDirectorError('Plan duration_seconds does not match analyzed audio duration.');
   return { beat_count: plan.beats.length, shot_count: plan.shots.length, segment_count: segments.length };
@@ -135,6 +140,22 @@ export function buildDirectorPrompt({ project, script, transcript, assets }) {
   ].join('\n\n');
 }
 
+function toStructuredOutputSchema(schema) {
+  const unsupported = new Set(['$schema', '$id', 'title', 'description', 'minLength', 'maxLength', 'minItems', 'maxItems', 'exclusiveMinimum', 'exclusiveMaximum', 'pattern']);
+  const clean = (value) => {
+    if (Array.isArray(value)) return value.map(clean);
+    if (!value || typeof value !== 'object') return value;
+    const out = {};
+    for (const [key, child] of Object.entries(value)) {
+      if (unsupported.has(key)) continue;
+      if (key === 'const') out.enum = [child];
+      else out[key] = clean(child);
+    }
+    return out;
+  };
+  return clean(schema);
+}
+
 export async function requestStoryPlan({ prompt, schema, apiUrl, apiKey, model, fetchImpl = fetch, timeoutMs = 120000 }) {
   if (!apiKey) throw new StoryDirectorError('Missing STORY_DIRECTOR_API_KEY. Configure an API key before running AI story direction.');
   if (!model) throw new StoryDirectorError('Missing STORY_DIRECTOR_MODEL. Configure the model name before running AI story direction.');
@@ -151,7 +172,7 @@ export async function requestStoryPlan({ prompt, schema, apiUrl, apiKey, model, 
         temperature: 0.4,
         response_format: {
           type: 'json_schema',
-          json_schema: { name: 'd3_video_story_plan', strict: true, schema }
+          json_schema: { name: 'd3_video_story_plan', strict: true, schema: toStructuredOutputSchema(schema) }
         },
         messages: [
           { role: 'system', content: 'You are a precise, production-minded animation story director. Follow the requested JSON schema exactly.' },
