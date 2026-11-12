@@ -171,7 +171,7 @@ export function buildDirectorPrompt({ project, script, transcript, assets }) {
     'Use camera choices with motivated variety; avoid repetitive medium shots and unmotivated movement.',
     'Preserve spatial direction, character identity, prop state, scale, and lighting continuity.',
     'Do not copy any existing creator, franchise, character, or scene. Keep concepts original and producible with the listed assets.',
-    'Return only JSON matching the supplied schema. No markdown fences or commentary.',
+    'Return only JSON matching the supplied schema. Every declared field is required; use null for optional animation, position, rotation, lens, or angle values. No markdown fences or commentary.',
     'Project: ' + project,
     'Audio duration seconds: ' + duration,
     'SCRIPT:\n' + script,
