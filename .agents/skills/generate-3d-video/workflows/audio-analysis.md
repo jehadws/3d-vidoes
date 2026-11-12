@@ -4,6 +4,21 @@
 
 Use the supplied voiceover as the timing source. The script supplies intended wording and structure; the audio determines actual delivery, pauses, emphasis, and total runtime.
 
+## Run the implemented analyzer
+
+The repository now provides a Node.js CLI backed by FFprobe and Whisper.cpp:
+
+```bash
+npm run analyze-audio -- --project pilot-video \
+  --audio projects/pilot-video/audio/voiceover.wav \
+  --script projects/pilot-video/script/script.md \
+  --model models/ggml-base.en.bin
+```
+
+Set `WHISPER_MODEL` to avoid passing `--model` each time. Set `WHISPER_CLI` or `FFPROBE` when the executables are not named `whisper-cli` and `ffprobe` on PATH. Use `--language auto` for language detection or a Whisper language code. The default output is `projects/<project>/analysis/transcript.json`; `--output` overrides it.
+
+The analyzer currently emits phrase-level timestamps from Whisper.cpp JSON. It does not claim word-level alignment. Gaps between adjacent phrase segments are recorded as pauses; these are transcript timing gaps, not a separate waveform-based silence detector.
+
 ## Inspect the source
 
 Record:
@@ -14,7 +29,7 @@ Record:
 
 Never modify the source file. Create derived analysis files separately.
 
-## Transcription and alignment
+## Transcription and alignment\n\nThe implemented provider is Whisper.cpp. It requires a model file supplied through `--model` or `WHISPER_MODEL`. The analyzer invokes FFprobe for source metadata, invokes `whisper-cli` for transcription, and writes the normalized JSON report. It never changes the original script or audio.\n
 
 1. Prefer a local transcription/alignment tool already installed in the environment.
 2. If unavailable, inspect available connected or agent-provided audio tools before selecting a fallback.
