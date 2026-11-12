@@ -5,6 +5,7 @@ import { fileURLToPath } from 'node:url';
 import { checkProject } from '../../../packages/quality/src/index.js';
 import { planJobs } from '../../../packages/rendering/src/index.js';
 import { analyzeAudio } from '../../../packages/audio-analysis/src/index.js';
+import { directStory } from '../../../packages/story/src/index.js';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../../..');
 
@@ -17,7 +18,7 @@ function parseArgs(argv) {
     language: 'auto',
     minimumPause: 0.25
   };
-  const valueOptions = new Set(['--project', '--quality', '--audio', '--script', '--model', '--language', '--output', '--minimum-pause']);
+  const valueOptions = new Set(['--project', '--quality', '--audio', '--script', '--model', '--language', '--output', '--minimum-pause', '--transcript', '--director-model']);
   for (let i = 0; i < rest.length; i++) {
     const arg = rest[i];
     if (arg === '--strict') opts.strict = true;
@@ -32,7 +33,9 @@ function parseArgs(argv) {
         '--model': 'model',
         '--language': 'language',
         '--output': 'output',
-        '--minimum-pause': 'minimumPause'
+        '--minimum-pause': 'minimumPause',
+        '--transcript': 'transcript',
+        '--director-model': 'directorModel'
       })[arg];
       opts[key] = key === 'minimumPause' ? Number(value) : value;
     } else {
