@@ -86,12 +86,25 @@ function validateCoverage(plan, transcript) {
     for (const id of shot.narration_segment_ids) {
       if (!segmentById.has(id)) throw new StoryDirectorError(shot.id + ' references unknown narration segment ' + id + '.');
       if (!beat.narration_segment_ids.includes(id)) throw new StoryDirectorError(shot.id + ' references narration outside its parent beat.');
+      const segment = segmentById.get(id);
+      if (shot.end_seconds <= segment.start || shot.start_seconds >= segment.end) {
+        throw new StoryDirectorError(shot.id + ' timing does not overlap narration segment ' + id + '.');
+      }
       shotSegmentIds.add(id);
     }
     shotsByBeat.get(shot.beat_id).push(shot);
   }
   for (const [beatId, shots] of shotsByBeat) {
     if (!shots.length) throw new StoryDirectorError(beatId + ' has no visual shots.');
+    const beat = plan.beats.find((item) => item.id === beatId);
+    if (shots[0].start_seconds > beat.start_seconds + 0.05 || shots.at(-1).end_seconds < beat.end_seconds - 0.05) {
+      throw new StoryDirectorError(beatId + ' shot sequence does not cover its complete beat interval.');
+    }
+    for (let index = 1; index < shots.length; index++) {
+      if (shots[index].start_seconds - shots[index - 1].end_seconds > 0.1) {
+        throw new StoryDirectorError(beatId + ' contains an unexplained gap between shots.');
+      }
+    }
   }
   if (segments.some((segment) => !shotSegmentIds.has(segment.id))) {
     throw new StoryDirectorError('Every narration segment must be represented by at least one shot.');
