@@ -178,6 +178,9 @@ export function buildDirectorPrompt({ project, script, transcript, assets, direc
     'TIMED TRANSCRIPT:\n' + JSON.stringify(segments),
     'SCRIPT ALIGNMENT REPORT:\n' + JSON.stringify(transcript.script_comparison ?? null),
     'AVAILABLE ASSETS:\n' + JSON.stringify(assetSummary),
+    'APPROVED ART DIRECTION CONTEXT:\n' + (directionContext.artDirection || 'No art direction document found; do not invent approval.'),
+    'CHARACTER BIBLE CONTEXT:\n' + (directionContext.characterBible || 'No character bible found.'),
+    'QUALITY STANDARDS:\n' + (directionContext.qualityStandards || 'Use clear silhouettes, motivated composition, continuity, and readable acting.'),
     'Planning rules: use shot boundaries that follow phrase meaning and pauses; cover the complete spoken timeline from first segment to last; short intentional visual holds are allowed inside beats; no unexplained timeline gaps or overlaps.'
   ].join('\n\n');
 }
