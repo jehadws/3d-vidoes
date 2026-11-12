@@ -100,14 +100,40 @@ function validateCoverage(plan, transcript) {
   return { beat_count: plan.beats.length, shot_count: plan.shots.length, segment_count: segments.length };
 }
 
-export function validateStoryPlan(root, plan, transcript) {
+function validateAssetReferences(plan, assets) {
+  const registry = new Map(assets.map((asset) => [asset.id, asset]));
+  for (const shot of plan.shots) {
+    const environment = registry.get(shot.environment);
+    if (!environment || environment.type !== 'environment') {
+      throw new StoryDirectorError(shot.id + ' references unavailable environment asset ' + shot.environment + '.');
+    }
+    for (const character of shot.characters) {
+      const asset = registry.get(character.asset);
+      if (!asset || asset.type !== 'character') {
+        throw new StoryDirectorError(shot.id + ' references unavailable character asset ' + character.asset + '.');
+      }
+      if (character.animation && !(asset.animations ?? []).includes(character.animation)) {
+        throw new StoryDirectorError(shot.id + ' requests unsupported animation ' + character.animation + ' on ' + character.asset + '.');
+      }
+      if (character.expression && !(asset.expressions ?? []).includes(character.expression)) {
+        throw new StoryDirectorError(shot.id + ' requests unsupported expression ' + character.expression + ' on ' + character.asset + '.');
+      }
+    }
+    for (const propId of shot.props) {
+      const prop = registry.get(propId);
+      if (!prop || prop.type !== 'prop') throw new StoryDirectorError(shot.id + ' references unavailable prop asset ' + propId + '.');
+    }
+  }
+}
+
+export function validateStoryPlan(root, plan, transcript, assets = null) {
   const schema = readJson(path.join(root, 'schemas', 'story-plan.schema.json'));
   const validate = new Ajv({ allErrors: true }).compile(schema);
   if (!validate(plan)) {
     const details = validate.errors.map((error) => (error.instancePath || '/') + ' ' + error.message).join('; ');
     throw new StoryDirectorError('Story plan schema validation failed: ' + details);
   }
-  return validateCoverage(plan, transcript);
+  const coverage = validateCoverage(plan, transcript);\n  if (assets) validateAssetReferences(plan, assets);\n  return coverage;
 }
 
 export function buildDirectorPrompt({ project, script, transcript, assets }) {
@@ -233,7 +259,7 @@ export async function directStory({ root, project, transcriptPath, scriptPath, o
   plan.schema_version = 1;
   plan.project = project;
   plan.duration_seconds = round(transcript.duration_seconds);
-  const validation = validateStoryPlan(root, plan, transcript);
+  const validation = validateStoryPlan(root, plan, transcript, assets);
   fs.mkdirSync(path.dirname(outputFile), { recursive: true });
   const tempFile = outputFile + '.tmp';
   fs.writeFileSync(tempFile, JSON.stringify(plan, null, 2) + '\n', 'utf8');
