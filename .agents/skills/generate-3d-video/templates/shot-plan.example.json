@@ -1,0 +1,49 @@
+{
+  "project": "example-what-if",
+  "fps": 30,
+  "resolution": {
+    "width": 1920,
+    "height": 1080
+  },
+  "audio": {
+    "source": "audio/voiceover.wav",
+    "duration_seconds": 42.8
+  },
+  "shots": [
+    {
+      "id": "shot_001",
+      "start_seconds": 0.0,
+      "end_seconds": 4.2,
+      "duration_seconds": 4.2,
+      "narration_segment_ids": ["segment_001"],
+      "story_beat": "Establish the premise and hook",
+      "environment": "environment_id",
+      "characters": [
+        {
+          "asset": "protagonist_id",
+          "action": "turn_and_react",
+          "expression": "surprised",
+          "animation": "reaction_clip"
+        }
+      ],
+      "props": [],
+      "camera": {
+        "type": "medium",
+        "angle": "eye_level",
+        "movement": "slow_push_in"
+      },
+      "lighting": "approved_lighting_preset",
+      "composition": {
+        "foreground": "soft environmental framing",
+        "midground": "protagonist",
+        "background": "readable location details"
+      },
+      "transition_in": "cut",
+      "transition_out": "cut",
+      "continuity_notes": [],
+      "asset_dependencies": ["protagonist_id", "environment_id"],
+      "status": "planned",
+      "qa_status": "not_reviewed"
+    }
+  ]
+}
