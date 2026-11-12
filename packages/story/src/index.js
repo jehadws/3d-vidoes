@@ -151,7 +151,7 @@ export function validateStoryPlan(root, plan, transcript, assets = null) {
   return coverage;
 }
 
-export function buildDirectorPrompt({ project, script, transcript, assets }) {
+export function buildDirectorPrompt({ project, script, transcript, assets, directionContext = {} }) {
   const { duration, segments } = validateTranscript(transcript);
   const assetSummary = assets.map((asset) => ({
     id: asset.id,
@@ -251,6 +251,11 @@ function loadAssets(root) {
     }
   };
   walk(path.join(root, 'assets'));
+  const ids = new Set();
+  for (const asset of assets) {
+    if (!asset.id || ids.has(asset.id)) throw new StoryDirectorError('Asset registry contains a missing or duplicate asset id: ' + (asset.id || '(empty)'));
+    ids.add(asset.id);
+  }
   return assets;
 }
 
@@ -284,7 +289,16 @@ export async function directStory({ root, project, transcriptPath, scriptPath, o
   if (!script.trim()) throw new StoryDirectorError('Script file is empty.');
   const assets = loadAssets(root);
   const schema = readJson(path.join(root, 'schemas', 'story-plan.schema.json'));
-  const prompt = buildDirectorPrompt({ project, script, transcript, assets });
+  const readContext = (relativePath) => {
+    const file = path.join(root, relativePath);
+    return fs.existsSync(file) ? fs.readFileSync(file, 'utf8').slice(0, 16000) : '';
+  };
+  const directionContext = {
+    artDirection: readContext('docs/ART-DIRECTION.md'),
+    characterBible: readContext('docs/CHARACTER-BIBLE.md'),
+    qualityStandards: readContext('docs/QUALITY-STANDARDS.md')
+  };
+  const prompt = buildDirectorPrompt({ project, script, transcript, assets, directionContext });
   const plan = await requestStoryPlan({
     prompt, schema, apiUrl, apiKey, model, fetchImpl
   });
