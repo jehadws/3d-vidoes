@@ -32,18 +32,18 @@ The repository includes [`generate-3d-video`](.agents/skills/generate-3d-video/S
 
 The skill directs an agent through audio analysis and script alignment, story direction, timed shot planning, reusable asset resolution, Blender scene production, preview/final rendering, visual QA, and final video assembly. See its [production pipeline](.agents/skills/generate-3d-video/workflows/production-pipeline.md).
 
-**Important:** this skill is the orchestration contract, not proof that every production subsystem is already implemented. The current engine remains scaffolded; the skill checks actual tool availability and repository capabilities, and must report blocked stages rather than fabricate a finished render.
+**Current implementation boundary:** audio probing and phrase-level transcription are implemented through FFprobe + Whisper.cpp. Shot planning, Blender animation/rendering, visual QA automation, and final editing remain incomplete/scaffolded; the skill must report blocked stages rather than fabricate a finished render.
 
 ## Quick start
 
-Requires Node.js ≥ 20. Blender is only needed for assembling/rendering shots.
+Requires Node.js ≥ 20. Audio analysis additionally requires FFprobe, Whisper.cpp `whisper-cli`, and a downloaded Whisper.cpp model. Blender is only needed for assembling/rendering shots.
 
 ```bash
 npm install
 npm test                       # schema, reference, and caching tests
 npm run validate               # assets + project config + shots
 npm run validate:strict        # pre-final-render gate: assets must be approved with real files
-npm run jobs -- --quality preview   # which shots need rendering vs cached
+npm run jobs -- --quality preview   # which shots need rendering vs cached\nnpm run analyze-audio -- --project pilot-video --audio projects/pilot-video/audio/voiceover.wav --script projects/pilot-video/script/script.md --model models/ggml-base.en.bin
 ```
 
 Assemble a single shot (needs Blender and real asset `.blend` files):
@@ -55,7 +55,7 @@ blender -b -P blender/scripts/assemble_shot.py -- \
   --out projects/pilot-video/scenes/shot_001.blend
 ```
 
-## Docs
+Audio analysis writes `projects/<name>/analysis/transcript.json` with media metadata, phrase timestamps, inter-phrase gaps, and a script/transcript token comparison. Set `WHISPER_MODEL` to use a default model path, or pass `--model` as shown. The original audio and script are not modified.\n\n## Docs
 
 [Architecture](docs/ARCHITECTURE.md) · [Roadmap](docs/ROADMAP.md) · [Art Direction](docs/ART-DIRECTION.md) · [Character Bible](docs/CHARACTER-BIBLE.md) · [Asset Standards](docs/ASSET-STANDARDS.md) · [Shot Specification](docs/SHOT-SPECIFICATION.md) · [Quality Standards](docs/QUALITY-STANDARDS.md) · [Decision Log](docs/DECISION-LOG.md)
 
