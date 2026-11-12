@@ -133,7 +133,8 @@ export function validateStoryPlan(root, plan, transcript, assets = null) {
     const details = validate.errors.map((error) => (error.instancePath || '/') + ' ' + error.message).join('; ');
     throw new StoryDirectorError('Story plan schema validation failed: ' + details);
   }
-  const coverage = validateCoverage(plan, transcript);\n  if (assets) validateAssetReferences(plan, assets);\n  return coverage;
+  const coverage = validateCoverage(plan, transcript);
+  if (assets) validateAssetReferences(plan, assets);\n  return coverage;
 }
 
 export function buildDirectorPrompt({ project, script, transcript, assets }) {
@@ -161,6 +162,7 @@ export function buildDirectorPrompt({ project, script, transcript, assets }) {
     'Audio duration seconds: ' + duration,
     'SCRIPT:\n' + script,
     'TIMED TRANSCRIPT:\n' + JSON.stringify(segments),
+    'SCRIPT ALIGNMENT REPORT:\n' + JSON.stringify(transcript.script_comparison ?? null),
     'AVAILABLE ASSETS:\n' + JSON.stringify(assetSummary),
     'Planning rules: use shot boundaries that follow phrase meaning and pauses; cover the complete spoken timeline from first segment to last; short intentional visual holds are allowed inside beats; no unexplained timeline gaps or overlaps.'
   ].join('\n\n');
