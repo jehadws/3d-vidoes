@@ -5,7 +5,7 @@ import { fileURLToPath } from 'node:url';
 import { checkProject } from '../../../packages/quality/src/index.js';
 import { planJobs } from '../../../packages/rendering/src/index.js';
 import { analyzeAudio } from '../../../packages/audio-analysis/src/index.js';
-import { directStory } from '../../../packages/story/src/index.js';
+import { directStory, validateStoryFile } from '../../../packages/story/src/index.js';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../../..');
 
@@ -60,6 +60,8 @@ const USAGE = `d3-video production CLI
   direct-story [--project NAME] [--script FILE] [--transcript FILE]
                [--output FILE] [--director-model MODEL]
                                          Generate and validate a story beat + timed shot plan.
+  validate-story [--project NAME] [--transcript FILE] [--output FILE]
+                                         Re-validate a saved story plan and its asset references.
 
 Audio analysis requirements:
   ffprobe on PATH (or FFPROBE), whisper-cli on PATH (or WHISPER_CLI),
@@ -133,6 +135,24 @@ async function main() {
       console.log(`Audio analysis saved: ${outputPath}`);
       console.log(`Duration: ${result.duration_seconds}s | ${result.sample_rate ?? 'unknown'} Hz | ${result.channels ?? 'unknown'} channel(s)`);
       console.log(`Timed phrases: ${result.transcription.segments.length} | pauses: ${result.pauses.length} | script match: ${result.script_comparison.status}`);
+    } catch (error) {
+      console.error(error.message);
+      process.exitCode = 1;
+    }
+    return;
+  }
+
+  if (command === 'validate-story') {
+    try {
+      const result = validateStoryFile({
+        root: ROOT,
+        project: opts.project,
+        transcriptPath: opts.transcript,
+        planPath: opts.output
+      });
+      console.log('Story plan valid: ' + result.planFile);
+      console.log('Beats: ' + result.beat_count + ' | shots: ' + result.shot_count + ' | narration segments: ' + result.segment_count);
+      console.log('Duration: ' + result.duration_seconds + 's | schema, timing, and asset validation: passed');
     } catch (error) {
       console.error(error.message);
       process.exitCode = 1;
