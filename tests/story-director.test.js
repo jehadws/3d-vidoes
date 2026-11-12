@@ -33,8 +33,8 @@ const plan = {
     { id: 'beat_002', title: 'The shift', purpose: 'Reveal the change.', start_seconds: 2.2, end_seconds: 5.8, narration_segment_ids: ['segment_002', 'segment_003'], visual_concept: 'The room subtly transforms.', character_direction: 'Confusion turns to wonder.' }
   ],
   shots: [
-    { id: 'shot_001', beat_id: 'beat_001', start_seconds: 0, end_seconds: 2, narration_segment_ids: ['segment_001'], story_beat: 'Wake in a familiar bedroom.', environment: 'living_room', characters: [], props: [], camera: { type: 'wide', movement: 'static' }, lighting: 'soft_morning', composition: { foreground: 'bed edge', midground: 'empty room', background: 'window' }, transition_in: 'cut', transition_out: 'cut', continuity_notes: [] },
-    { id: 'shot_002', beat_id: 'beat_002', start_seconds: 2.2, end_seconds: 5.8, narration_segment_ids: ['segment_002', 'segment_003'], story_beat: 'Reveal the changed room.', environment: 'living_room', characters: [], props: [], camera: { type: 'close_up', movement: 'dolly_in' }, lighting: 'cool_shift', composition: { foreground: 'clock', midground: 'protagonist', background: 'warped room' }, transition_in: 'cut', transition_out: 'fade', continuity_notes: ['Keep clock position consistent.'] }
+    { id: 'shot_001', beat_id: 'beat_001', start_seconds: 0, end_seconds: 2, narration_segment_ids: ['segment_001'], story_beat: 'Wake in a familiar bedroom.', environment: 'living_room', characters: [], props: [], camera: { type: 'wide', movement: 'static', focal_length_mm: null, angle: null }, lighting: 'soft_morning', composition: { foreground: 'bed edge', midground: 'empty room', background: 'window' }, transition_in: 'cut', transition_out: 'cut', continuity_notes: [] },
+    { id: 'shot_002', beat_id: 'beat_002', start_seconds: 2.2, end_seconds: 5.8, narration_segment_ids: ['segment_002', 'segment_003'], story_beat: 'Reveal the changed room.', environment: 'living_room', characters: [], props: [], camera: { type: 'close_up', movement: 'dolly_in', focal_length_mm: null, angle: null }, lighting: 'cool_shift', composition: { foreground: 'clock', midground: 'protagonist', background: 'warped room' }, transition_in: 'cut', transition_out: 'fade', continuity_notes: ['Keep clock position consistent.'] }
   ]
 };
 
@@ -90,7 +90,7 @@ test('rejects generated plans that reference missing or unsupported assets', () 
     { id: 'protagonist', type: 'character', animations: ['idle'], expressions: ['curious'] }
   ];
   const valid = structuredClone(plan);
-  valid.shots[0].characters = [{ asset: 'protagonist', action: 'look around', expression: 'curious', animation: 'idle' }];
+  valid.shots[0].characters = [{ asset: 'protagonist', action: 'look around', expression: 'curious', animation: 'idle', position: null, rotation_z: null }];
   assert.equal(validateStoryPlan(ROOT, valid, transcript, assets).shot_count, 2);
   const invalid = structuredClone(valid);
   invalid.shots[0].characters[0].animation = 'flying';
