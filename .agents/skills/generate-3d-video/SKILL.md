@@ -46,7 +46,7 @@ Adapt to existing project conventions instead of creating duplicate structures.
 
 Follow [the production pipeline](workflows/production-pipeline.md) in order:
 
-1. Analyze narration and align script text to audio time.
+1. Run the production CLI audio analyzer to probe the voiceover, transcribe it with Whisper.cpp, and align phrase timestamps against the supplied script. Read the resulting `analysis/transcript.json`.
 2. Build a story beat sheet and visual direction.
 3. Plan a varied, continuous sequence of shots.
 4. Resolve reusable characters, environments, props, materials, and animation assets.
@@ -56,7 +56,7 @@ Follow [the production pipeline](workflows/production-pipeline.md) in order:
 8. Validate the final video and report the exact output path.
 
 Read the relevant workflow document before each stage:
-- [Audio analysis](workflows/audio-analysis.md)
+- [Audio analysis](workflows/audio-analysis.md) — executable CLI: `npm run analyze-audio -- --project NAME --audio FILE --script FILE --model MODEL`
 - [Visual direction and shot planning](workflows/visual-direction.md)
 - [Blender production](workflows/blender-production.md)
 - [Quality assurance](workflows/quality-assurance.md)
