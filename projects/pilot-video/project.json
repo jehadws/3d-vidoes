@@ -1,6 +1,6 @@
 {
   "name": "pilot-video",
-  "fps": 24,
+  "fps": 30,
   "resolution": { "width": 1920, "height": 1080 },
   "render": {
     "preview": { "engine": "BLENDER_EEVEE_NEXT", "samples": 32 },
