@@ -56,12 +56,18 @@ const USAGE = `d3-video production CLI
                                          Show which shots need rendering vs are cached.
   analyze-audio [--project NAME] --audio FILE [--script FILE] [--model FILE]
                 [--language auto|CODE] [--output FILE] [--minimum-pause SECONDS]
-                                         Probe audio, transcribe with Whisper.cpp, and write
-                                         phrase timestamps + script comparison as JSON.
+                                         Probe audio and create a timestamped Whisper transcript.
+  direct-story [--project NAME] [--script FILE] [--transcript FILE]
+               [--output FILE] [--director-model MODEL]
+                                         Generate and validate a story beat + timed shot plan.
 
 Audio analysis requirements:
   ffprobe on PATH (or FFPROBE), whisper-cli on PATH (or WHISPER_CLI),
   and a Whisper.cpp model (--model or WHISPER_MODEL).
+
+AI story direction requirements:
+  STORY_DIRECTOR_API_KEY, STORY_DIRECTOR_MODEL, and optionally STORY_DIRECTOR_API_URL.
+  The default endpoint is the OpenAI-compatible /v1/chat/completions API.
 `;
 
 async function main() {
@@ -127,6 +133,28 @@ async function main() {
       console.log(`Audio analysis saved: ${outputPath}`);
       console.log(`Duration: ${result.duration_seconds}s | ${result.sample_rate ?? 'unknown'} Hz | ${result.channels ?? 'unknown'} channel(s)`);
       console.log(`Timed phrases: ${result.transcription.segments.length} | pauses: ${result.pauses.length} | script match: ${result.script_comparison.status}`);
+    } catch (error) {
+      console.error(error.message);
+      process.exitCode = 1;
+    }
+    return;
+  }
+
+  if (command === 'direct-story') {
+    try {
+      const result = await directStory({
+        root: ROOT,
+        project: opts.project,
+        transcriptPath: opts.transcript,
+        scriptPath: opts.script,
+        outputPath: opts.output,
+        apiUrl: process.env.STORY_DIRECTOR_API_URL,
+        apiKey: process.env.STORY_DIRECTOR_API_KEY,
+        model: opts.directorModel || process.env.STORY_DIRECTOR_MODEL
+      });
+      console.log('Story plan saved: ' + result.outputFile);
+      console.log('Beats: ' + result.beat_count + ' | shots: ' + result.shot_count + ' | narration segments: ' + result.segment_count);
+      console.log('Duration: ' + result.duration_seconds + 's | schema and timeline validation: passed');
     } catch (error) {
       console.error(error.message);
       process.exitCode = 1;
