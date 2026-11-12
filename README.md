@@ -23,6 +23,17 @@ A quality-first production system for original, **stylized 3D animated story vid
 | 4. Production engine | Scaffolded: `validate`, `jobs`, `blender/scripts/assemble_shot.py` (untested) |
 | 5–6. QA system, full production | Not started |
 
+## Agent skill
+
+The repository includes [`generate-3d-video`](.agents/skills/generate-3d-video/SKILL.md), an agent workflow designed around a simple input contract:
+
+- `script.md`
+- `voiceover.wav` (or another supported audio format)
+
+The skill directs an agent through audio analysis and script alignment, story direction, timed shot planning, reusable asset resolution, Blender scene production, preview/final rendering, visual QA, and final video assembly. See its [production pipeline](.agents/skills/generate-3d-video/workflows/production-pipeline.md).
+
+**Important:** this skill is the orchestration contract, not proof that every production subsystem is already implemented. The current engine remains scaffolded; the skill checks actual tool availability and repository capabilities, and must report blocked stages rather than fabricate a finished render.
+
 ## Quick start
 
 Requires Node.js ≥ 20. Blender is only needed for assembling/rendering shots.
