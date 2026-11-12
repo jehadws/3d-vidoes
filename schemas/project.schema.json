@@ -1,0 +1,29 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://d3-video/schemas/project.schema.json",
+  "title": "Project configuration",
+  "type": "object",
+  "required": ["name", "fps", "resolution"],
+  "additionalProperties": false,
+  "properties": {
+    "name": { "type": "string" },
+    "fps": { "type": "number", "enum": [24, 25, 30, 60] },
+    "resolution": {
+      "type": "object",
+      "required": ["width", "height"],
+      "additionalProperties": false,
+      "properties": {
+        "width": { "type": "integer", "minimum": 1 },
+        "height": { "type": "integer", "minimum": 1 }
+      }
+    },
+    "render": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "preview": { "type": "object", "properties": { "engine": { "const": "BLENDER_EEVEE_NEXT" }, "samples": { "type": "integer" } } },
+        "final": { "type": "object", "properties": { "engine": { "const": "CYCLES" }, "samples": { "type": "integer" } } }
+      }
+    }
+  }
+}

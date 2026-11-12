@@ -1,0 +1,42 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://d3-video/schemas/shot.schema.json",
+  "title": "Shot specification",
+  "type": "object",
+  "required": ["id", "duration", "environment", "camera", "story_beat"],
+  "additionalProperties": false,
+  "properties": {
+    "id": { "type": "string", "pattern": "^shot_\\d{3,}$" },
+    "duration": { "type": "number", "exclusiveMinimum": 0 },
+    "environment": { "type": "string", "pattern": "^[a-z][a-z0-9_]*$" },
+    "characters": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["asset"],
+        "additionalProperties": false,
+        "properties": {
+          "asset": { "type": "string" },
+          "animation": { "type": "string" },
+          "expression": { "type": "string" },
+          "position": { "type": "array", "items": { "type": "number" }, "minItems": 3, "maxItems": 3 },
+          "rotation_z": { "type": "number" }
+        }
+      }
+    },
+    "props": { "type": "array", "items": { "type": "string" } },
+    "camera": {
+      "type": "object",
+      "required": ["type"],
+      "additionalProperties": false,
+      "properties": {
+        "type": { "enum": ["wide", "medium", "close_up", "extreme_close_up", "over_shoulder", "top_down"] },
+        "movement": { "enum": ["static", "pan", "tilt", "tracking", "dolly_in", "dolly_out", "orbit"] },
+        "focal_length_mm": { "type": "number", "exclusiveMinimum": 0 }
+      }
+    },
+    "lighting": { "type": "string" },
+    "narration_ref": { "type": "string" },
+    "story_beat": { "type": "string", "minLength": 1 }
+  }
+}

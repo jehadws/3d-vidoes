@@ -1,0 +1,9 @@
+{
+  "id": "shot_001",
+  "duration": 5.5,
+  "environment": "city_street",
+  "characters": [{ "asset": "protagonist", "animation": "walking", "expression": "curious" }],
+  "camera": { "type": "medium", "movement": "tracking" },
+  "lighting": "late_afternoon",
+  "story_beat": "The protagonist discovers something unusual"
+}

@@ -1,0 +1,1 @@
+{ "id": "city_street", "type": "environment", "name": "City street (outdoor)", "version": "0.0.1", "status": "concept", "source": "scene.blend", "preview": "preview.png", "scale": { "unit": "meters", "up": "Z", "forward": "-Y" } }

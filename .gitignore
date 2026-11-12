@@ -1,0 +1,9 @@
+node_modules/
+*.blend1
+*.blend@
+__pycache__/
+.DS_Store
+projects/*/renders/*
+!projects/*/renders/.gitkeep
+projects/*/output/*
+!projects/*/output/.gitkeep

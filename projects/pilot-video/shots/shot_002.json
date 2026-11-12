@@ -1,0 +1,9 @@
+{
+  "id": "shot_002",
+  "duration": 3,
+  "environment": "city_street",
+  "characters": [{ "asset": "protagonist", "animation": "reacting", "expression": "surprised" }],
+  "camera": { "type": "close_up", "movement": "dolly_in" },
+  "lighting": "late_afternoon",
+  "story_beat": "Surprise registers on the protagonist's face"
+}

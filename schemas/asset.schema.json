@@ -1,0 +1,30 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://d3-video/schemas/asset.schema.json",
+  "title": "Asset metadata",
+  "type": "object",
+  "required": ["id", "type", "version", "status"],
+  "additionalProperties": false,
+  "properties": {
+    "id": { "type": "string", "pattern": "^[a-z][a-z0-9_]*$" },
+    "type": { "enum": ["character", "environment", "prop", "material", "lighting", "animation"] },
+    "name": { "type": "string" },
+    "version": { "type": "string", "pattern": "^\\d+\\.\\d+\\.\\d+$" },
+    "status": { "enum": ["concept", "blockout", "modeled", "rigged", "approved"] },
+    "source": { "type": "string", "description": "Path to .blend, relative to the asset directory" },
+    "preview": { "type": "string", "description": "Preview image, relative to the asset directory" },
+    "scale": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "unit": { "const": "meters" },
+        "up": { "enum": ["Z", "Y"] },
+        "forward": { "enum": ["-Y", "Y", "-X", "X"] },
+        "height": { "type": "number", "exclusiveMinimum": 0 }
+      }
+    },
+    "expressions": { "type": "array", "items": { "type": "string" }, "uniqueItems": true },
+    "animations": { "type": "array", "items": { "type": "string" }, "uniqueItems": true },
+    "tags": { "type": "array", "items": { "type": "string" } }
+  }
+}

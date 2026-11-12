@@ -1,0 +1,13 @@
+{
+  "id": "protagonist",
+  "type": "character",
+  "name": "Protagonist (placeholder, design not approved)",
+  "version": "0.0.1",
+  "status": "concept",
+  "source": "model.blend",
+  "preview": "preview.png",
+  "scale": { "unit": "meters", "up": "Z", "forward": "-Y", "height": 1.7 },
+  "expressions": ["neutral", "happy", "confused", "surprised", "worried", "curious"],
+  "animations": ["idle", "walking", "running", "talking", "pointing", "reacting"],
+  "tags": ["recurring", "hero"]
+}
