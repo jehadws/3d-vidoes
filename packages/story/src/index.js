@@ -227,6 +227,35 @@ export async function requestStoryPlan({ prompt, schema, apiUrl, apiKey, model, 
   }
 }
 
+function loadAssets(root) {
+  const assets = [];
+  const walk = (dir) => {
+    if (!fs.existsSync(dir)) return;
+    for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
+      const full = path.join(dir, entry.name);
+      if (entry.isDirectory()) walk(full);
+      else if (entry.name === 'metadata.json') assets.push(readJson(full));
+    }
+  };
+  walk(path.join(root, 'assets'));
+  return assets;
+}
+
+export function validateStoryFile({ root, project, transcriptPath, planPath }) {
+  const projectDir = path.resolve(root, 'projects', project);
+  if (!project || !projectDir.startsWith(path.resolve(root, 'projects') + path.sep)) {
+    throw new StoryDirectorError('Project must be a directory name inside projects/.');
+  }
+  const transcriptFile = path.resolve(transcriptPath || path.join(projectDir, 'analysis', 'transcript.json'));
+  const planFile = path.resolve(planPath || path.join(projectDir, 'story', 'shot-plan.json'));
+  if (!fs.existsSync(transcriptFile)) throw new StoryDirectorError('Transcript not found: ' + transcriptFile);
+  if (!fs.existsSync(planFile)) throw new StoryDirectorError('Story plan not found: ' + planFile);
+  const transcript = readJson(transcriptFile);
+  const plan = readJson(planFile);
+  const validation = validateStoryPlan(root, plan, transcript, loadAssets(root));
+  return { ...validation, duration_seconds: plan.duration_seconds, planFile };
+}
+
 export async function directStory({ root, project, transcriptPath, scriptPath, outputPath, apiUrl, apiKey, model, fetchImpl }) {
   const projectDir = path.resolve(root, 'projects', project);
   if (!project || !projectDir.startsWith(path.resolve(root, 'projects') + path.sep)) {
@@ -240,20 +269,7 @@ export async function directStory({ root, project, transcriptPath, scriptPath, o
   const transcript = readJson(transcriptFile);
   const script = fs.readFileSync(scriptFile, 'utf8');
   if (!script.trim()) throw new StoryDirectorError('Script file is empty.');
-  const assetsRoot = path.join(root, 'assets');
-  const assets = [];
-  const walk = (dir) => {
-    if (!fs.existsSync(dir)) return;
-    for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
-      const full = path.join(dir, entry.name);
-      if (entry.isDirectory()) walk(full);
-      else if (entry.name === 'metadata.json') {
-        const metadata = readJson(full);
-        assets.push(metadata);
-      }
-    }
-  };
-  walk(assetsRoot);
+  const assets = loadAssets(root);
   const schema = readJson(path.join(root, 'schemas', 'story-plan.schema.json'));
   const prompt = buildDirectorPrompt({ project, script, transcript, assets });
   const plan = await requestStoryPlan({
