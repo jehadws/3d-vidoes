@@ -49,26 +49,26 @@
             "type": "array",
             "items": {
               "type": "object", "additionalProperties": false,
-              "required": ["asset", "action", "expression"],
+              "required": ["asset", "action", "expression", "animation", "position", "rotation_z"],
               "properties": {
                 "asset": { "type": "string" },
                 "action": { "type": "string" },
                 "expression": { "type": "string" },
-                "animation": { "type": "string" },
-                "position": { "type": "array", "items": { "type": "number" }, "minItems": 3, "maxItems": 3 },
-                "rotation_z": { "type": "number" }
+                "animation": { "type": ["string", "null"] },
+                "position": { "type": ["array", "null"], "items": { "type": "number" }, "minItems": 3, "maxItems": 3 },
+                "rotation_z": { "type": ["number", "null"] }
               }
             }
           },
           "props": { "type": "array", "items": { "type": "string" } },
           "camera": {
             "type": "object", "additionalProperties": false,
-            "required": ["type", "movement"],
+            "required": ["type", "movement", "focal_length_mm", "angle"],
             "properties": {
               "type": { "enum": ["wide", "medium", "close_up", "extreme_close_up", "over_shoulder", "top_down"] },
               "movement": { "enum": ["static", "pan", "tilt", "tracking", "dolly_in", "dolly_out", "orbit"] },
-              "focal_length_mm": { "type": "number", "exclusiveMinimum": 0 },
-              "angle": { "type": "string" }
+              "focal_length_mm": { "type": ["number", "null"], "exclusiveMinimum": 0 },
+              "angle": { "type": ["string", "null"] }
             }
           },
           "lighting": { "type": "string", "minLength": 1 },
