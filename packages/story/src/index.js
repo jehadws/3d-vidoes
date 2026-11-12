@@ -134,7 +134,8 @@ export function validateStoryPlan(root, plan, transcript, assets = null) {
     throw new StoryDirectorError('Story plan schema validation failed: ' + details);
   }
   const coverage = validateCoverage(plan, transcript);
-  if (assets) validateAssetReferences(plan, assets);\n  return coverage;
+  if (assets) validateAssetReferences(plan, assets);
+  return coverage;
 }
 
 export function buildDirectorPrompt({ project, script, transcript, assets }) {
