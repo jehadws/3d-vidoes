@@ -17,7 +17,7 @@ A quality-first production system for original, **stylized 3D animated story vid
 
 | Phase | Status |
 |---|---|
-| 1. Art direction | **Open** (reopened for 3D): character bible and visual identity needed |
+| 1. Art direction | **Open**: look-dev v0 rendered ([report](docs/LOOKDEV-REPORT.md)), awaiting approval |
 | 2. 3D foundation | Not started |
 | 3. Pilot (30–60 s) | Not started |
 | 4. Production engine | Scaffolded: `validate`, `jobs`, `blender/scripts/assemble_shot.py` (untested) |
@@ -35,6 +35,13 @@ npm run validate:strict        # pre-final-render gate: assets must be approved 
 npm run jobs -- --quality preview   # which shots need rendering vs cached
 ```
 
+Render the look-dev test shots (Python 3.11 + `bpy`, see [report](docs/LOOKDEV-REPORT.md)):
+
+```bash
+pip install -r blender/requirements.txt
+python blender/scripts/lookdev.py --out renders/lookdev --res 1280x720 --samples 32
+```
+
 Assemble a single shot (needs Blender and real asset `.blend` files):
 
 ```bash
@@ -46,7 +53,7 @@ blender -b -P blender/scripts/assemble_shot.py -- \
 
 ## Docs
 
-[Architecture](docs/ARCHITECTURE.md) · [Roadmap](docs/ROADMAP.md) · [Art Direction](docs/ART-DIRECTION.md) · [Character Bible](docs/CHARACTER-BIBLE.md) · [Asset Standards](docs/ASSET-STANDARDS.md) · [Shot Specification](docs/SHOT-SPECIFICATION.md) · [Quality Standards](docs/QUALITY-STANDARDS.md) · [Decision Log](docs/DECISION-LOG.md)
+[Architecture](docs/ARCHITECTURE.md) · [Roadmap](docs/ROADMAP.md) · [Art Direction](docs/ART-DIRECTION.md) · [Character Bible](docs/CHARACTER-BIBLE.md) · [Asset Standards](docs/ASSET-STANDARDS.md) · [Shot Specification](docs/SHOT-SPECIFICATION.md) · [Quality Standards](docs/QUALITY-STANDARDS.md) · [Decision Log](docs/DECISION-LOG.md) · [Reference Analysis](docs/REFERENCE-ANALYSIS.md) · [Look-dev Report](docs/LOOKDEV-REPORT.md)
 
 ## Relationship to d2-video
 

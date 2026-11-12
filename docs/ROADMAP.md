@@ -2,7 +2,7 @@
 
 | Phase | Deliverable | Exit condition | Status |
 |---|---|---|---|
-| 1. Art direction | Character bible, visual standards | Approved visual identity | **Open** (reopened for 3D) |
+| 1. Art direction | Character bible, visual standards | Approved visual identity | **Open**: look-dev v0 rendered, awaiting approval ([report](LOOKDEV-REPORT.md)) |
 | 2. 3D foundation | Character, rig, materials, environments | Reusable asset library | Not started |
 | 3. Pilot production | 30–60 s animated sequence | Quality approved | Not started |
 | 4. Production engine | Automated scene assembly + rendering | Repeatable production | Scaffolded (validate, jobs) |

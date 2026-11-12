@@ -21,7 +21,7 @@
       "type": "object",
       "additionalProperties": false,
       "properties": {
-        "preview": { "type": "object", "properties": { "engine": { "const": "BLENDER_EEVEE_NEXT" }, "samples": { "type": "integer" } } },
+        "preview": { "type": "object", "properties": { "engine": { "enum": ["BLENDER_EEVEE", "BLENDER_EEVEE_NEXT"] }, "samples": { "type": "integer" } } },
         "final": { "type": "object", "properties": { "engine": { "const": "CYCLES" }, "samples": { "type": "integer" } } }
       }
     }

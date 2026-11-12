@@ -3,7 +3,7 @@
   "fps": 30,
   "resolution": { "width": 1920, "height": 1080 },
   "render": {
-    "preview": { "engine": "BLENDER_EEVEE_NEXT", "samples": 32 },
+    "preview": { "engine": "BLENDER_EEVEE", "samples": 32 },
     "final": { "engine": "CYCLES", "samples": 256 }
   }
 }

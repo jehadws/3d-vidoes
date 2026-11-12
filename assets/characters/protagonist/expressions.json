@@ -1,0 +1,147 @@
+{
+  "_doc": "Face system v0. Face-space: u in [-1,1] (left-right), v in [-1,1] (down-up) mapped onto the head surface. brows: [[height, inner_raise] x2], index 0 = viewer's left. mouth: w=half-width, curve>0 smiles, asym tilts a smirk, wobble adds waviness, open>0 draws a dark oval mouth.",
+  "neutral": {
+    "eye": "oval",
+    "open": 0.85,
+    "lid": 0.0,
+    "brows": [
+      [
+        0.3,
+        0.02
+      ],
+      [
+        0.3,
+        0.02
+      ]
+    ],
+    "mouth": {
+      "w": 0.2,
+      "curve": 0.01
+    },
+    "blush": 0.0
+  },
+  "smirk": {
+    "eye": "oval",
+    "open": 0.55,
+    "lid": 1.0,
+    "brows": [
+      [
+        0.23,
+        -0.02
+      ],
+      [
+        0.38,
+        0.06
+      ]
+    ],
+    "mouth": {
+      "w": 0.26,
+      "curve": 0.1,
+      "asym": 0.2
+    },
+    "blush": 0.0
+  },
+  "happy": {
+    "eye": "arc",
+    "open": 1.0,
+    "lid": 0.0,
+    "brows": [
+      [
+        0.37,
+        0.02
+      ],
+      [
+        0.37,
+        0.02
+      ]
+    ],
+    "mouth": {
+      "w": 0.3,
+      "curve": 0.13
+    },
+    "blush": 1.0
+  },
+  "confused": {
+    "eye": "oval",
+    "open": 0.9,
+    "lid": 0.0,
+    "brows": [
+      [
+        0.27,
+        0.12
+      ],
+      [
+        0.39,
+        -0.06
+      ]
+    ],
+    "mouth": {
+      "w": 0.17,
+      "curve": 0.0,
+      "asym": -0.04,
+      "wobble": 0.03
+    },
+    "blush": 0.0
+  },
+  "surprised": {
+    "eye": "oval",
+    "open": 1.3,
+    "lid": 0.0,
+    "brows": [
+      [
+        0.43,
+        0.0
+      ],
+      [
+        0.43,
+        0.0
+      ]
+    ],
+    "mouth": {
+      "w": 0.07,
+      "open": 1.0
+    },
+    "blush": 0.0
+  },
+  "worried": {
+    "eye": "oval",
+    "open": 0.95,
+    "lid": 0.0,
+    "brows": [
+      [
+        0.3,
+        0.15
+      ],
+      [
+        0.3,
+        0.15
+      ]
+    ],
+    "mouth": {
+      "w": 0.2,
+      "curve": -0.07
+    },
+    "blush": 0.0
+  },
+  "curious": {
+    "eye": "oval",
+    "open": 0.95,
+    "lid": 0.0,
+    "brows": [
+      [
+        0.32,
+        0.0
+      ],
+      [
+        0.4,
+        0.05
+      ]
+    ],
+    "mouth": {
+      "w": 0.16,
+      "curve": 0.02,
+      "asym": 0.05
+    },
+    "blush": 0.0
+  }
+}
