@@ -123,30 +123,30 @@ Check the plan's schema, segment coverage, timing, beat/shot relationships, and 
 
 ### Stage 4 — Scene assembly and animation
 
-- Convert the validated shot plan into renderer-compatible shot specs.
-- Resolve assets by registry ID/version.
-- Assemble Blender scenes deterministically.
-- Apply real rig actions, keyframes, camera motion, lighting, materials, and prop interactions.
-- Animate anticipation, action, follow-through, holds, eye-lines, weight, and contact—not just generic idle loops.
+- Convert the validated story shot plan into `projects/<slug>/shots/*.json` using the existing shot schema. Preserve shot IDs, durations, environment IDs, character animation/expression IDs, props, camera, lighting, and story beat.
+- For the first vertical slice, target the currently implemented renderer contract: one `protagonist`, environments `interior_room` or `city_street`, animations `idle`, `walking`, `running`, `talking`, `reacting`, or `pointing`, expressions `neutral`, `curious`, `happy`, or `surprised`, and optional `mystery_orb` prop. Do not silently map unsupported assets or actions to a different visual.
+- Keep shot durations aligned to the audio timeline. The pilot renderer requires their sum to match the original voiceover duration within 0.25 seconds.
+- Run `npm run validate:story -- --project <slug>` after asset registration, then run `npm run validate -- --project <slug>` for the legacy shot/asset registry checks where applicable.
+- Render a low-cost pilot with `npm run render:pilot -- --project <slug> --audio projects/<slug>/input/voiceover.<ext> --quality preview`.
+- The current procedural renderer creates the rigged protagonist, supported pose action, expression, simple environment, lighting preset, camera movement, and per-shot MP4. It is a first vertical slice, not the complete approved asset pipeline.
 - Preserve character identity, screen direction, environment geography, prop state, scale, and lighting continuity.
-- Validate each scene and save reproducible project files.
+- Do not claim a shot is complete unless Blender exits successfully and the expected MP4 is present and non-empty.
 
 ### Stage 5 — Preview and visual QA
 
-- Render low-cost previews for every shot.
-- Generate contact sheets and motion previews.
+- Inspect the generated per-shot MP4s and final preview. Extract contact sheets and representative motion samples with local FFmpeg/FFprobe tools.
 - Inspect all contact sheets and representative motion, not just renderer logs.
 - Record defects by shot ID and severity.
 - Fix missing assets, bad framing, clipping, intersections, floating props, weak acting, foot sliding, continuity errors, lighting defects, and timing problems.
-- Re-render only affected shots when the cache is valid.
-- Do not start final rendering while critical preview defects remain.
+- The current pilot orchestrator does not generate contact sheets or perform visual scoring automatically. Create and inspect this evidence explicitly; never treat its technical-pass report as visual approval.
+- Re-render affected shots after changes. Do not start final rendering while critical preview defects remain.
 
 ### Stage 6 — Final render and sound
 
-- Render approved shots at the configured final settings.
+- Only after visual review, render approved shots at the configured final settings with `npm run render:pilot -- --project <slug> --audio projects/<slug>/input/voiceover.<ext> --quality final`.
+- The pilot renderer assembles shots in timeline order, muxes the original voiceover unchanged, and checks the output video/audio streams, resolution, and duration.
 - Verify frame count and duration for each shot.
-- Assemble shots in timeline order against the original voiceover.
-- Create or select appropriate music, ambience, and SFX using local/repository assets and original work; do not depend on remote generation services.
+- Add music, ambience, and SFX only from local/repository assets and original work; the current pilot renderer does not yet automate music/SFX creation or mixing.
 - Keep narration intelligible; mix music and SFX beneath it, avoid clipping, and preserve sync.
 - Use FFmpeg for deterministic assembly and encoding.
 
