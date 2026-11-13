@@ -5,7 +5,7 @@ import { fileURLToPath } from 'node:url';
 import { checkProject } from '../../../packages/quality/src/index.js';
 import { planJobs } from '../../../packages/rendering/src/index.js';
 import { analyzeAudio } from '../../../packages/audio-analysis/src/index.js';
-import { directStory, validateStoryFile } from '../../../packages/story/src/index.js';
+import { validateStoryFile } from '../../../packages/story/src/index.js';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../../..');
 
@@ -18,7 +18,7 @@ function parseArgs(argv) {
     language: 'auto',
     minimumPause: 0.25
   };
-  const valueOptions = new Set(['--project', '--quality', '--audio', '--script', '--model', '--language', '--output', '--minimum-pause', '--transcript', '--director-model']);
+  const valueOptions = new Set(['--project', '--quality', '--audio', '--script', '--model', '--language', '--output', '--minimum-pause', '--transcript']);
   for (let i = 0; i < rest.length; i++) {
     const arg = rest[i];
     if (arg === '--strict') opts.strict = true;
@@ -35,7 +35,6 @@ function parseArgs(argv) {
         '--output': 'output',
         '--minimum-pause': 'minimumPause',
         '--transcript': 'transcript',
-        '--director-model': 'directorModel'
       })[arg];
       opts[key] = key === 'minimumPause' ? Number(value) : value;
     } else {
@@ -57,9 +56,6 @@ const USAGE = `d3-video production CLI
   analyze-audio [--project NAME] --audio FILE [--script FILE] [--model FILE]
                 [--language auto|CODE] [--output FILE] [--minimum-pause SECONDS]
                                          Probe audio and create a timestamped Whisper transcript.
-  direct-story [--project NAME] [--script FILE] [--transcript FILE]
-               [--output FILE] [--director-model MODEL]
-                                         Generate and validate a story beat + timed shot plan.
   validate-story [--project NAME] [--transcript FILE] [--output FILE]
                                          Re-validate a saved story plan and its asset references.
 
@@ -67,9 +63,6 @@ Audio analysis requirements:
   ffprobe on PATH (or FFPROBE), whisper-cli on PATH (or WHISPER_CLI),
   and a Whisper.cpp model (--model or WHISPER_MODEL).
 
-AI story direction requirements:
-  STORY_DIRECTOR_API_KEY, STORY_DIRECTOR_MODEL, and optionally STORY_DIRECTOR_API_URL.
-  The default endpoint is the OpenAI-compatible /v1/chat/completions API.
 `;
 
 async function main() {
@@ -160,27 +153,6 @@ async function main() {
     return;
   }
 
-  if (command === 'direct-story') {
-    try {
-      const result = await directStory({
-        root: ROOT,
-        project: opts.project,
-        transcriptPath: opts.transcript,
-        scriptPath: opts.script,
-        outputPath: opts.output,
-        apiUrl: process.env.STORY_DIRECTOR_API_URL,
-        apiKey: process.env.STORY_DIRECTOR_API_KEY,
-        model: opts.directorModel || process.env.STORY_DIRECTOR_MODEL
-      });
-      console.log('Story plan saved: ' + result.outputFile);
-      console.log('Beats: ' + result.beat_count + ' | shots: ' + result.shot_count + ' | narration segments: ' + result.segment_count);
-      console.log('Duration: ' + result.duration_seconds + 's | schema and timeline validation: passed');
-    } catch (error) {
-      console.error(error.message);
-      process.exitCode = 1;
-    }
-    return;
-  }
 
   console.log(USAGE);
   process.exitCode = command ? 2 : 0;
