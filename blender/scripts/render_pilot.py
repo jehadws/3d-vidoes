@@ -11,6 +11,7 @@ import json
 import math
 import re
 import os
+from fractions import Fraction
 import shutil
 import subprocess
 import sys
@@ -188,6 +189,14 @@ def main():
     expected_resolution = config.get("resolution", {"width": 1920, "height": 1080})
     if video.get("width") != int(expected_resolution["width"]) or video.get("height") != int(expected_resolution["height"]):
         raise PipelineError(f"Final resolution {video.get('width')}x{video.get('height')} does not match project settings.")
+    try:
+        actual_fps = float(Fraction(video.get("r_frame_rate", "0/1")))
+    except (ValueError, ZeroDivisionError):
+        actual_fps = 0.0
+    if abs(actual_fps - fps) > 0.01:
+        raise PipelineError(f"Final frame rate {actual_fps:g} does not match project FPS {fps}.")
+    if video.get("codec_name") != "h264" or audio.get("codec_name") != "aac":
+        raise PipelineError(f"Unexpected final codecs: video={video.get('codec_name')}, audio={audio.get('codec_name')}.")
     if abs(final_duration - audio_duration) > max(args.duration_tolerance, 1.0 / fps):
         raise PipelineError(
             f"Final duration {final_duration:.3f}s differs from voiceover {audio_duration:.3f}s."
@@ -201,7 +210,7 @@ def main():
         "output": str(output),
         "duration_seconds": final_duration,
         "voiceover_duration_seconds": audio_duration,
-        "fps": fps,
+        "fps": actual_fps,
         "resolution": {"width": video.get("width"), "height": video.get("height")},
         "video_codec": video.get("codec_name"),
         "audio_codec": audio.get("codec_name"),
