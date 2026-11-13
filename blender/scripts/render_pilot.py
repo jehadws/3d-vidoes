@@ -187,8 +187,14 @@ def main():
     if not video or not audio:
         raise PipelineError("Final MP4 is missing a video or audio stream.")
     expected_resolution = config.get("resolution", {"width": 1920, "height": 1080})
-    if video.get("width") != int(expected_resolution["width"]) or video.get("height") != int(expected_resolution["height"]):
-        raise PipelineError(f"Final resolution {video.get('width')}x{video.get('height')} does not match project settings.")
+    resolution_scale = 0.55 if args.quality == "preview" else 1.0
+    expected_width = round(int(expected_resolution["width"]) * resolution_scale)
+    expected_height = round(int(expected_resolution["height"]) * resolution_scale)
+    if video.get("width") != expected_width or video.get("height") != expected_height:
+        raise PipelineError(
+            f"Final resolution {video.get('width')}x{video.get('height')} does not match "
+            f"the {args.quality} target {expected_width}x{expected_height}."
+        )
     try:
         actual_fps = float(Fraction(video.get("r_frame_rate", "0/1")))
     except (ValueError, ZeroDivisionError):
