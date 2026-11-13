@@ -277,9 +277,18 @@ def build_environment(collection, environment):
         add_cube("side_table", (1.4, 0.25, 0.42), (1.0, 0.7, 0.8), deep, collection, 0.06)
 
 
-def add_lighting(scene):
+def add_lighting(scene, preset="late_afternoon"):
+    presets = {
+        "late_afternoon": ((1.0, 0.78, 0.58), 850, (1.0, 0.68, 0.38), 520),
+        "soft_morning": ((0.78, 0.86, 1.0), 760, (1.0, 0.82, 0.62), 420),
+        "cool_shift": ((0.62, 0.76, 1.0), 700, (0.48, 0.68, 1.0), 480),
+        "warm_evening": ((1.0, 0.62, 0.38), 900, (1.0, 0.48, 0.25), 600),
+        "neutral": ((1.0, 1.0, 1.0), 800, (0.78, 0.86, 1.0), 450),
+    }
+    key_color, key_energy, rim_color, rim_energy = presets.get(preset, presets["late_afternoon"])
     key_data = bpy.data.lights.new("key_softbox", "AREA")
-    key_data.energy = 850
+    key_data.energy = key_energy
+    key_data.color = key_color
     key_data.shape = "DISK"
     key_data.size = 5.0
     key = bpy.data.objects.new("key_softbox", key_data)
@@ -288,8 +297,8 @@ def add_lighting(scene):
     key.rotation_euler = (Vector((0, 0, 1.0)) - key.location).to_track_quat("-Z", "Y").to_euler()
 
     rim_data = bpy.data.lights.new("warm_rim", "AREA")
-    rim_data.energy = 520
-    rim_data.color = (1.0, 0.68, 0.38)
+    rim_data.energy = rim_energy
+    rim_data.color = rim_color
     rim_data.size = 3.0
     rim = bpy.data.objects.new("warm_rim", rim_data)
     rim.location = (3.0, 2.5, 4.0)
@@ -387,7 +396,7 @@ def main():
             obj.hide_render = not visible
             obj.hide_viewport = not visible
 
-    if shot.get("props"):
+    if "mystery_orb" in shot.get("props", []):
         prop_collection = bpy.data.collections.new("props")
         scene.collection.children.link(prop_collection)
         orb_mat = material("story_prop_glow", PALETTE["glow"], metallic=0.15, emission=0.6)
@@ -396,7 +405,7 @@ def main():
         orb.location.z += 0.18
         orb.keyframe_insert(data_path="location", frame=frame_end)
 
-    add_lighting(scene)
+    add_lighting(scene, shot.get("lighting", "late_afternoon"))
     build_camera(scene, shot, frame_end)
     scene.frame_set(1)
     os.makedirs(os.path.dirname(os.path.abspath(args.out)), exist_ok=True)
