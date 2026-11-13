@@ -109,7 +109,7 @@ Create:
 
 Group narration into dramatic beats. Design varied shots with explicit character action, environment, props, camera, lighting, composition, transitions, and continuity. Use only registered asset IDs and supported animation/expression IDs when they exist. If a required asset does not exist yet, identify it as a production asset requirement in the plan and create it in the asset stage—do not invent a registry ID.
 
-Run `npm run validate:story -- --project <slug>` after writing the plan. Fix every validation error before scene production.
+Check the plan's schema, segment coverage, timing, beat/shot relationships, and continuity before proceeding. Register stable metadata for any planned assets during the asset stage, then run `npm run validate:story -- --project <slug>` to verify every asset, animation, and expression reference before scene production.
 
 ### Stage 3 — Art direction and reusable assets
 
