@@ -1,110 +1,112 @@
 # Production Pipeline
 
-This workflow defines the end-to-end state machine for one narrated 3D video.
+This is an autonomous pipeline with two user inputs only: the script and its voiceover. All story direction, production planning, asset work, animation, rendering, sound, editing, and QA are handled by the agent using repository code and local tools.
 
-## Stage 0 — Preflight
+## Stage 0 — Intake and preflight
 
-- Identify the project root and supplied script/audio.
-- Read repository guidance and project configuration.
-- Check Blender, FFmpeg, Node.js, Python, available GPU/render devices, and audio tools.
-- Run existing tests and validation.
-- Check asset registry and prior project outputs.
-- Create a run manifest recording inputs, versions, settings, and start state.
+- Locate the supplied script and voiceover. Ask only for whichever one is missing.
+- Derive a project slug/title from the script; use project defaults for aspect, resolution, and FPS.
+- Copy inputs into the project without modifying originals.
+- Inspect prior project state; resume only when the source pair matches.
+- Check Node.js, Python, Blender, FFmpeg/FFprobe, Whisper.cpp, render hardware, tests, schemas, assets, and cache.
+- Record tool versions, settings, source hashes, and baseline validation.
 
-**Gate:** Do not start rendering if required tools or inputs are missing. Continue with planning where possible and report blockers precisely.
+**Gate:** Never start a stage whose required inputs or tools are missing. Continue independent stages and document blockers. No remote API, hosted model, paid provider, or third-party generation service is required.
 
-## Stage 1 — Narration analysis
+## Stage 1 — Audio analysis
 
-Follow `audio-analysis.md`.
+Run the local analyzer with the supplied pair:
 
-Deliver:
-- Transcript with timestamps and confidence/source metadata.
-- Audio duration, sample rate, channels, and loudness information where available.
-- Pause/emphasis map.
-- Script-to-audio alignment report.
-- Segments suitable for story beats.
+```bash
+npm run analyze-audio -- --project <slug> --audio projects/<slug>/input/voiceover.wav --script projects/<slug>/input/script.md --model <installed-whisper-model>
+```
 
-**Gate:** All spoken content must be accounted for. Mark uncertain alignment rather than inventing timestamps.
+- Probe the original audio with FFprobe.
+- Transcribe with local Whisper.cpp and preserve phrase timestamps.
+- Compare transcription with the supplied script.
+- Record duration, pauses, confidence/uncertainty, and mismatches.
+- Preserve source files unchanged.
 
-## Stage 2 — Story direction
+**Gate:** The transcript must cover the actual narration. Resolve severe recognition/alignment uncertainty before timing shots. Do not silently rewrite or drop spoken material.
 
-Follow `visual-direction.md`.
+## Stage 2 — Story direction and shot plan
 
-Deliver:
-- One-sentence premise and audience promise.
-- Beat sheet with narration ranges.
-- Visual motif and emotional progression.
-- Character/environment/prop requirements.
-- Continuity notes and ending image.
+The agent itself acts as story director; do not call a separate story API/service.
 
-**Gate:** The visuals must explain, dramatize, or emotionally support the narration rather than merely illustrate each word.
+- Read the full script, timed transcript, project art direction, character bible, quality standards, and asset registry.
+- Create `story/bible.md` and `story/shot-plan.json`.
+- Group the narration into coherent dramatic beats, not one shot per sentence.
+- Assign every transcript segment to exactly one beat and at least one correctly timed shot.
+- Design shots for camera, acting, staging, lighting, composition, transitions, and continuity.
+- Use only existing asset IDs; explicitly identify new assets that need to be built.
+- Preserve the narration's original words and timing.
 
-## Stage 3 — Shot planning
+Validate:
 
-Deliver a structured shot list using the repository schema. Each shot should include:
-- Stable ID and duration.
-- Start/end time and narration segment references.
-- Environment and required assets.
-- Character action, expression, and staging.
-- Camera framing, angle, and movement.
-- Lighting and visual effects.
-- Transition in/out and continuity constraints.
-- Production status and QA status.
+```bash
+npm run validate:story -- --project <slug>
+```
 
-Durations must fit the voiceover timeline. Avoid gaps or overlaps unless intentionally specified.
+Fix all schema, timing, coverage, overlap, and asset-reference errors.
 
-**Gate:** Validate every shot against the current schema before Blender assembly.
+**Gate:** The plan is structurally valid, covers the complete narration, and can be produced with existing or planned assets.
 
-## Stage 4 — Asset resolution and look development
+## Stage 3 — Art direction and asset production
 
-- Search the asset registry before creating anything.
-- Reuse approved character rigs, animation clips, environments, props, materials, and lighting setups.
-- Record all asset IDs and versions used by each shot.
-- If a required asset is missing, create a minimal look-dev test before building a large asset.
-- Confirm character scale, face readability, material response, lighting, and camera language.
+- Reuse existing approved assets first.
+- Build missing reusable characters, rigs, expressions, animation clips, environments, props, and materials.
+- Create and inspect a look-dev render.
+- Register asset metadata, versions, dependencies, and supported actions.
+- Validate every shot's asset references.
+- Freeze shared assets before shot production.
 
-**Gate:** New hero assets must pass a visual review before being used throughout the project.
+**Gate:** Required hero assets have passed visual and technical checks. Do not use placeholder assets in final shots.
 
-## Stage 5 — Scene assembly and animation
+## Stage 4 — Blender scenes and animation
 
-- Build scenes from structured shot data.
-- Keep one authoritative camera and shot configuration per shot.
-- Use deterministic scripts and explicit Blender settings.
-- Animate acting beats, anticipation, holds, reactions, and transitions intentionally.
-- Verify rig constraints, contact points, foot placement, prop interaction, and camera clipping.
-- Save reusable scene/asset files and record dependencies.
+- Convert shots to renderer-compatible specifications.
+- Assemble scenes using deterministic Blender scripts.
+- Bind registered rigs, actions, props, cameras, lighting, and materials.
+- Animate acting with clear silhouettes, anticipation, follow-through, contact, and readable holds.
+- Preserve continuity across adjacent shots.
+- Save scene files and dependency manifests.
 
-**Gate:** A shot is not complete because its Blender file exists; it must render successfully and pass visual review.
+**Gate:** Every planned shot has one valid implementation, all dependencies resolve, and scenes pass technical validation.
 
-## Stage 6 — Preview rendering
+## Stage 5 — Preview rendering and visual review
 
-- Render low-cost previews at the configured preview quality.
-- Generate contact sheets grouped by sequence.
-- Review both individual frames and motion over time.
-- Fix staging, animation, continuity, lighting, and timing before final rendering.
-- Re-render only changed shots when caching allows it.
+- Render previews for every shot.
+- Generate contact sheets and representative motion previews.
+- Inspect them visually.
+- Record defects with shot IDs and evidence.
+- Correct staging, animation, camera, lighting, clipping, intersections, timing, and continuity.
+- Re-render changed shots and invalidate stale cache entries.
 
-**Gate:** Do not spend final-render resources on shots with unresolved blocking defects.
+**Gate:** No critical visual defects remain. A passing schema check alone is not visual approval.
 
-## Stage 7 — Final rendering and edit
+## Stage 6 — Final rendering, sound, and edit
 
-- Render approved shots at final project settings.
-- Confirm frame count and duration for every shot.
-- Assemble shots in timeline order.
-- Place the original voiceover against the aligned timeline.
-- Add music, SFX, and captions only when assets/tools are available and rights are clear.
-- Keep narration intelligible; avoid clipping and abrupt level changes.
-- Use FFmpeg or the repository's editing layer for final assembly.
+- Render approved shots using the project's final profile.
+- Verify shot durations and frame counts.
+- Assemble the complete visual timeline against the original voiceover.
+- Add appropriate music, ambience, and SFX from available local assets/original work.
+- Mix so narration remains clear; prevent clipping and sync drift.
+- Encode the final MP4 with FFmpeg.
 
-**Gate:** The assembled video must have the intended duration and no missing or duplicated shots.
+**Gate:** No missing/duplicate shots; timeline and narration durations agree within the project tolerance.
 
-## Stage 8 — Final QA and delivery
+## Stage 7 — Final QA and delivery
 
-Follow `quality-assurance.md`.
+- Probe the final MP4 and verify video/audio streams, codecs, resolution, FPS, and duration.
+- Check audio/video sync, black or missing frames, transitions, opening, ending, and pacing.
+- Inspect the full video when practical; clearly label any sampled-only review.
+- Save QA evidence, production manifest, and logs.
+- Deliver the real MP4 and concise verified report.
 
-- Verify output file exists and is readable.
-- Probe codec, dimensions, frame rate, duration, and audio streams.
-- Check opening, ending, transitions, sync, and representative frames throughout.
-- Review the entire video when practical; never describe sampled-frame inspection as full review.
-- Save QA evidence and a production report.
-- Deliver the exact output path and distinguish completed stages from blocked ones.
+## Recovery
+
+- Resume from the last verified stage.
+- Retry only failed work after diagnosing the failure.
+- Preserve successful renders and approved assets.
+- Invalidate cache entries when any source, asset, animation, camera, lighting, or render setting changes.
+- Never mark a stage complete without its artifact and validation evidence.

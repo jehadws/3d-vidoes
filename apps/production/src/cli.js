@@ -5,6 +5,7 @@ import { fileURLToPath } from 'node:url';
 import { checkProject } from '../../../packages/quality/src/index.js';
 import { planJobs } from '../../../packages/rendering/src/index.js';
 import { analyzeAudio } from '../../../packages/audio-analysis/src/index.js';
+import { validateStoryFile } from '../../../packages/story/src/index.js';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../../..');
 
@@ -17,7 +18,7 @@ function parseArgs(argv) {
     language: 'auto',
     minimumPause: 0.25
   };
-  const valueOptions = new Set(['--project', '--quality', '--audio', '--script', '--model', '--language', '--output', '--minimum-pause']);
+  const valueOptions = new Set(['--project', '--quality', '--audio', '--script', '--model', '--language', '--output', '--minimum-pause', '--transcript']);
   for (let i = 0; i < rest.length; i++) {
     const arg = rest[i];
     if (arg === '--strict') opts.strict = true;
@@ -32,7 +33,8 @@ function parseArgs(argv) {
         '--model': 'model',
         '--language': 'language',
         '--output': 'output',
-        '--minimum-pause': 'minimumPause'
+        '--minimum-pause': 'minimumPause',
+        '--transcript': 'transcript',
       })[arg];
       opts[key] = key === 'minimumPause' ? Number(value) : value;
     } else {
@@ -53,12 +55,14 @@ const USAGE = `d3-video production CLI
                                          Show which shots need rendering vs are cached.
   analyze-audio [--project NAME] --audio FILE [--script FILE] [--model FILE]
                 [--language auto|CODE] [--output FILE] [--minimum-pause SECONDS]
-                                         Probe audio, transcribe with Whisper.cpp, and write
-                                         phrase timestamps + script comparison as JSON.
+                                         Probe audio and create a timestamped Whisper transcript.
+  validate-story [--project NAME] [--transcript FILE] [--output FILE]
+                                         Re-validate a saved story plan and its asset references.
 
 Audio analysis requirements:
   ffprobe on PATH (or FFPROBE), whisper-cli on PATH (or WHISPER_CLI),
   and a Whisper.cpp model (--model or WHISPER_MODEL).
+
 `;
 
 async function main() {
@@ -130,6 +134,25 @@ async function main() {
     }
     return;
   }
+
+  if (command === 'validate-story') {
+    try {
+      const result = validateStoryFile({
+        root: ROOT,
+        project: opts.project,
+        transcriptPath: opts.transcript,
+        planPath: opts.output
+      });
+      console.log('Story plan valid: ' + result.planFile);
+      console.log('Beats: ' + result.beat_count + ' | shots: ' + result.shot_count + ' | narration segments: ' + result.segment_count);
+      console.log('Duration: ' + result.duration_seconds + 's | schema, timing, and asset validation: passed');
+    } catch (error) {
+      console.error(error.message);
+      process.exitCode = 1;
+    }
+    return;
+  }
+
 
   console.log(USAGE);
   process.exitCode = command ? 2 : 0;

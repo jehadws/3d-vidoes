@@ -5,6 +5,7 @@ on:
     branches:
       - main
       - feat/audio-analysis-engine
+      - feat/ai-story-director
   pull_request:
     branches:
       - main
@@ -26,7 +27,9 @@ jobs:
         run: |
           node --check apps/production/src/cli.js
           node --check packages/audio-analysis/src/index.js
+          node --check packages/story/src/index.js
           node --check tests/audio-analysis.test.js
+          node --check tests/story-director.test.js
       - name: Run tests
         run: npm test
       - name: Validate pilot project

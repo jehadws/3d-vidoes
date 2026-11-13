@@ -1,101 +1,191 @@
 ---
 name: generate-3d-video
-description: Produce a complete stylized 3D narrated video from a script and voiceover audio. Use when the user supplies a script and narration audio and asks for a finished animated video, a pilot, or production-ready shots.
+description: >
+  Use when the user supplies a script and its voiceover audio and wants a complete stylized 3D animated video.
+  The user inputs only the script and voiceover; this skill handles transcription, story direction, shot planning,
+  asset creation, Blender scene production, rendering, sound design, editing, QA, and final delivery autonomously.
 ---
 
-# Generate a 3D Video
+# Generate a 3D Video — Full Production Skill
 
 ## Mission
 
-Turn a supplied script and voiceover audio into a coherent, original, stylized 3D animated video. The user should normally need to provide only:
+Produce a complete, original, stylized 3D animated video from exactly two user inputs:
+1. The final script.
+2. The matching voiceover audio.
 
-- A script file (prefer `script.md`).
-- A voiceover audio file (WAV preferred; MP3/M4A accepted if the available tools support them).
+The user should not need to configure an AI provider, API key, external generation service, story-director service, or production microservices. The agent itself performs the creative and orchestration work. Local tools such as Blender, FFmpeg, FFprobe, and Whisper.cpp are implementation dependencies, not user-facing services.
 
-Take ownership of the production workflow. Do not stop after writing a storyboard or generating still images. The target deliverable is a reviewed, edited video file.
+The deliverable is a finished, edited, technically verified video—not merely a storyboard, shot list, scene file, or preview.
 
-## First: inspect the repository and available tools
+## Input contract
 
-1. Read the repository `README.md`, `docs/ARCHITECTURE.md`, `docs/ART-DIRECTION.md`, `docs/QUALITY-STANDARDS.md`, `docs/SHOT-SPECIFICATION.md`, `docs/ROADMAP.md`, and relevant decision records.
-2. Inspect the current project, schemas, asset registry, Blender scripts, CLI commands, and tests before changing anything.
-3. Detect available versions and executables: Node.js, Blender, FFmpeg, and audio-analysis/transcription tools. Do not assume they are installed.
-4. Run the existing validation and test commands before production work. Record failures separately from failures introduced by this run.
-5. Preserve the repository's original visual identity. Treat reference analysis as high-level guidance only; do not copy another creator's characters, scenes, assets, overlays, or exact compositions.
+- Required: one script file and one voiceover audio file.
+- Accept common text formats for the script and audio formats supported by installed FFmpeg/FFprobe.
+- If either input is missing, ask only for the missing input.
+- Do not ask the user to choose a model, API provider, art direction, shot count, render engine, aspect ratio, resolution, music, or SFX.
+- Use repository/project defaults for all production choices. Default to the project's configured aspect ratio, FPS, and resolution; if absent, use 16:9, 30 fps, and 1920×1080.
+- Do not ask for a title; derive a concise project title and safe slug from the script.
+- Do not ask the user to approve every intermediate production stage. Work autonomously and provide concise progress/results. Ask only when a genuine ambiguity or destructive decision cannot be resolved safely.
 
-## Inputs and defaults
+## Core principles
 
-Find the script and audio in the user's specified paths. If paths are not specified, inspect the current project directory for an obvious script and audio pair. Ask only if either required input is genuinely missing or ambiguous.
+1. **Narration is immutable.** Never rewrite, reorder, add, or omit spoken words. The audio is the timing authority; the supplied script is the intended wording and story reference.
+2. **Original visual identity.** Follow this repository's approved art direction and character bible. Do not copy another creator's character, assets, shots, or exact compositions.
+3. **Story first.** Plan meaningful story beats, then shots. Never make a mechanical one-sentence/one-shot storyboard.
+4. **Actual 3D animation.** Build reusable 3D assets, rigs, scenes, cameras, lights, and animation. Do not substitute unrelated generated stills or slideshow motion for 3D animation.
+5. **Inspect before scaling.** Render look-dev and previews, inspect images and motion, fix defects, then render finals.
+6. **Resume safely.** Reuse approved assets and unchanged renders. Never regenerate completed work without a reason.
+7. **Evidence over claims.** Every completed stage must have a real artifact, command result, or QA record.
 
-Use the project's configured frame rate and resolution. The current pilot target is 30 fps and 1920x1080 unless project configuration says otherwise. Do not silently change global project settings.
+## First run: repository and tool preflight
 
-Create or update a project directory under `projects/<project-name>/`. Keep source inputs intact. Suggested working layout:
+1. Read README, architecture, art direction, character bible, asset standards, shot schema, quality standards, roadmap, and this skill's workflow references.
+2. Inspect the existing project, asset registry, Blender scripts, render planner/cache, tests, and previous outputs.
+3. Detect Node.js, Python, Blender, FFmpeg/FFprobe, Whisper.cpp, and available CPU/GPU render devices. Never assume availability.
+4. Run baseline tests and project validation. Record pre-existing failures separately.
+5. Locate the two supplied inputs. Copy them into the project's input folders without modifying the originals.
+6. Create or resume `projects/<slug>/`; do not overwrite an existing project with a different script/audio pair.
 
-- `script.md` — copied or linked source script, never destructively rewritten.
-- `audio/voiceover.<ext>` — source narration.
-- `analysis/transcript.json` — transcript and timing evidence.
-- `story/beat-sheet.md` — narrative beats and visual intent.
-- `storyboard/shot-list.json` — timed shot plan.
-- `scenes/` — shot/sequence scene data and Blender files as supported.
-- `renders/preview/` and `renders/final/` — rendered shots.
-- `qa/` — contact sheets, review notes, scores, and issue list.
-- `output/final-video.mp4` — final assembled deliverable.
+If a required local dependency is missing, install it only when the repository documents a safe, reproducible local setup. Do not replace a missing local tool with a paid/remote API or third-party service. If installation is not possible, continue all independent stages and report the exact blocker.
 
-Adapt to existing project conventions instead of creating duplicate structures.
+## Project layout
 
-## Production workflow
+Use the repository's existing conventions; target:
 
-Follow [the production pipeline](workflows/production-pipeline.md) in order:
+```text
+projects/<slug>/
+  input/
+    script.<ext>
+    voiceover.<ext>
+  analysis/
+    transcript.json
+    audio-report.json
+  story/
+    bible.md
+    shot-plan.json
+  assets/
+  scenes/
+  shots/
+  renders/
+    preview/
+    final/
+  audio/
+    music/
+    sfx/
+    mix/
+  edit/
+  qa/
+  output/
+```
 
-1. Run the production CLI audio analyzer to probe the voiceover, transcribe it with Whisper.cpp, and align phrase timestamps against the supplied script. Read the resulting `analysis/transcript.json`.
-2. Build a story beat sheet and visual direction.
-3. Plan a varied, continuous sequence of shots.
-4. Resolve reusable characters, environments, props, materials, and animation assets.
-5. Build and animate Blender scenes using the repository's supported scripts and schemas.
-6. Render previews, inspect evidence, correct issues, then render approved shots.
-7. Assemble narration, shots, audio mix, and captions where supported.
-8. Validate the final video and report the exact output path.
+Keep source inputs immutable. Keep temporary files and caches out of source folders.
 
-Read the relevant workflow document before each stage:
-- [Audio analysis](workflows/audio-analysis.md) — executable CLI: `npm run analyze-audio -- --project NAME --audio FILE --script FILE --model MODEL`
+## End-to-end workflow
+
+Follow [production-pipeline.md](workflows/production-pipeline.md) in order. Read the stage-specific references when needed:
+
+- [Audio analysis](workflows/audio-analysis.md)
 - [Visual direction and shot planning](workflows/visual-direction.md)
 - [Blender production](workflows/blender-production.md)
 - [Quality assurance](workflows/quality-assurance.md)
 
-## Direction rules
+### Stage 1 — Audio analysis
 
-- Think in story beats, not one shot per sentence. A single sentence may need multiple visual moments; several short sentences may share one shot.
-- The narration is the timing backbone. Align shot boundaries to meaning, pauses, emphasis, and changes in visual intent.
-- Favor character acting, readable silhouettes, expressive poses, deliberate camera placement, and coherent environments over decorative complexity.
-- Maintain screen direction, spatial continuity, character identity, prop continuity, lighting logic, and consistent scale.
-- Reuse approved assets. Do not invent a new protagonist design or rebuild an existing environment in every shot.
-- Use authored animation and rig controls for important acting. Procedural motion is supplementary, not a substitute for intentional performance.
-- Use varied shot sizes and motivated camera movement. Avoid random cuts, constant camera motion, and repetitive framing.
-- Keep visual effects and overlays editable separately when the existing pipeline supports it.
-- Do not generate a sequence of unrelated AI still images and present it as continuous 3D animation.
+- Probe the original voiceover with FFprobe.
+- Transcribe the actual audio using the locally installed Whisper.cpp tool.
+- Align phrases to timestamps; preserve confidence/uncertainty.
+- Compare the transcript with the supplied script and report exact, omitted, added, reordered, and uncertain passages.
+- Use audio duration, pauses, emphasis, and delivery as timing truth.
+- Do not invent word-level timing when only phrase timing exists.
 
-## Execution and autonomy
+### Stage 2 — Story direction
 
-- Execute every stage that the repository and installed tools genuinely support.
-- When a capability is missing, implement the smallest safe reusable component if it fits the current task; otherwise produce a clearly labeled handoff artifact and continue with other stages.
-- Do not claim a scene was animated, rendered, reviewed, or assembled unless the corresponding artifact exists and was inspected.
-- Do not replace failed production with a fabricated placeholder final video.
-- Use preview renders and contact sheets before expensive final renders.
-- Cache by source/configuration/asset content where supported. Re-render only affected shots.
-- Keep a production log with commands, tool versions, warnings, failures, and completed stages.
-- Never overwrite source audio, source script, or existing approved assets.
-- Do not commit generated large renders or source media unless the repository explicitly tracks them.
+The agent performs story direction directly—there is no separate story API or service.
 
-## Approval and destructive actions
+Create:
+- `story/bible.md`: logline, audience promise, protagonist/cast, emotional arc, visual motifs, locations, art direction, lighting language, continuity rules, ending image.
+- `story/shot-plan.json`: schema-compliant beats and timed shots linked to transcript segment IDs.
 
-Follow repository approval gates. Human approval is required for major art-direction changes, irreversible asset replacement, publishing, or destructive changes. Do not publish a video to a public platform unless the user explicitly requests it.
+Group narration into dramatic beats. Design varied shots with explicit character action, environment, props, camera, lighting, composition, transitions, and continuity. Use only registered asset IDs and supported animation/expression IDs when they exist. If a required asset does not exist yet, identify it as a production asset requirement in the plan and create it in the asset stage—do not invent a registry ID.
+
+Check the plan's schema, segment coverage, timing, beat/shot relationships, and continuity before proceeding. Register stable metadata for any planned assets during the asset stage, then run `npm run validate:story -- --project <slug>` to verify every asset, animation, and expression reference before scene production.
+
+### Stage 3 — Art direction and reusable assets
+
+- Read the character bible and approved art direction.
+- Inspect the existing asset library before creating duplicates.
+- Build the protagonist and reusable cast, rigs, facial expressions, body actions, environments, props, and materials required by the shot plan.
+- Establish one consistent scale, material system, color pipeline, lighting language, and naming/version convention.
+- Create a small look-dev scene and render it. Inspect the actual render before propagating the style.
+- Register every reusable asset with stable ID, version, source file, type, supported animations/expressions, and approval status.
+- Never mark concept assets as production-approved without visual and technical review.
+
+### Stage 4 — Scene assembly and animation
+
+- Convert the validated shot plan into renderer-compatible shot specs.
+- Resolve assets by registry ID/version.
+- Assemble Blender scenes deterministically.
+- Apply real rig actions, keyframes, camera motion, lighting, materials, and prop interactions.
+- Animate anticipation, action, follow-through, holds, eye-lines, weight, and contact—not just generic idle loops.
+- Preserve character identity, screen direction, environment geography, prop state, scale, and lighting continuity.
+- Validate each scene and save reproducible project files.
+
+### Stage 5 — Preview and visual QA
+
+- Render low-cost previews for every shot.
+- Generate contact sheets and motion previews.
+- Inspect all contact sheets and representative motion, not just renderer logs.
+- Record defects by shot ID and severity.
+- Fix missing assets, bad framing, clipping, intersections, floating props, weak acting, foot sliding, continuity errors, lighting defects, and timing problems.
+- Re-render only affected shots when the cache is valid.
+- Do not start final rendering while critical preview defects remain.
+
+### Stage 6 — Final render and sound
+
+- Render approved shots at the configured final settings.
+- Verify frame count and duration for each shot.
+- Assemble shots in timeline order against the original voiceover.
+- Create or select appropriate music, ambience, and SFX using local/repository assets and original work; do not depend on remote generation services.
+- Keep narration intelligible; mix music and SFX beneath it, avoid clipping, and preserve sync.
+- Use FFmpeg for deterministic assembly and encoding.
+
+### Stage 7 — Final QA and delivery
+
+- Verify output exists, decodes, and contains video and audio streams.
+- Probe duration, codec, resolution, frame rate, and audio properties.
+- Check narration sync, missing/duplicated/black frames, transitions, opening hook, pacing, and ending.
+- Inspect the complete video when practical. If only sampled sections were reviewed, state that clearly.
+- Save contact sheets, QA report, render manifest, and production log.
+- Deliver the actual MP4 and its verified path.
+
+## Resume and concurrency rules
+
+- Freeze shared character, environment, material, and registry assets before parallel shot work.
+- Shared assets and project manifests have one writer at a time.
+- Partition shots into deterministic batches; workers may edit only assigned shots.
+- Use the repository's scheduler/lease system when implemented. Never bypass its concurrency controls.
+- Re-plan only when shot specs, implementations, or batch settings change.
+- Resume missing/failed work; do not redo accepted shots unnecessarily.
+- Cache keys must include shot spec, scene, asset versions, animation, camera, lighting, render settings, and Blender version.
+- Record each worker's completed/failed IDs, files changed, validation, and blockers.
+
+## Approval and safety boundaries
+
+- Use defaults and continue without intermediate approval for ordinary reversible production decisions.
+- Ask before destructive replacement of user source files or approved assets.
+- Do not publish or upload publicly unless explicitly requested.
+- Never fabricate an output, QA result, render status, or performance measurement.
 
 ## Completion report
 
 Report:
-- Final video path, duration, resolution, and frame rate (only when verified).
-- Number of planned, rendered, and approved shots.
-- Audio alignment and final QA status.
-- Important issues or stages that could not be completed.
+- Exact final MP4 path and file size.
+- Verified duration, resolution, FPS, codec, and audio stream.
+- Planned/rendered/approved shot counts.
+- Audio alignment status.
+- Visual and technical QA status.
+- Any stages that remain blocked and why.
 - Tests and validation commands actually run.
 
-A storyboard, preview, or collection of frames is not the finished-video deliverable. Clearly label partial outputs.
+A valid shot plan, Blender file, preview, or unreviewed render is not a finished-video deliverable.

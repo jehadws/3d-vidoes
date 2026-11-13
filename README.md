@@ -2,70 +2,86 @@
 
 A quality-first production system for original, **stylized 3D animated story videos**, built on Blender, Node.js, and FFmpeg.
 
-> **Direction change:** the project moved from hybrid 2.5D to stylized 3D (see [ADR-0002](docs/DECISION-LOG.md)). The earlier 2.5D docs are preserved in [`docs/archive/2.5d`](docs/archive/2.5d/).
+> **Direction:** stylized 3D (see [Decision Log](docs/DECISION-LOG.md)). Earlier 2.5D material is preserved in [docs/archive/2.5d](docs/archive/2.5d/).
+
+## User workflow
+
+The user provides only:
+1. The script.
+2. The matching voiceover audio.
+
+The `generate-3d-video` skill handles the complete production pipeline: local transcription and alignment, story direction, shot planning, reusable asset creation, Blender scene assembly, animation, preview/final rendering, sound design, editing, QA, and MP4 delivery.
+
+No separate story-director API, hosted model provider, API key, or third-party generation service is required. Local tools such as Blender, FFmpeg/FFprobe, and Whisper.cpp are production dependencies.
 
 ## Principles
 
-- **Quality first**: character acting, cinematic composition, consistent environments, reusable assets.
-- **Separate systems**: story, assets, animation, rendering, and editing evolve independently.
-- **Assets are linked, shots are data**: stable asset IDs and versions; shots are JSON specs.
-- **Incremental**: content-hash caching, so a change to one shot never forces a full rebuild.
-- **Original**: no copying of other creators' characters, scenes, or assets.
-- **Human approval** before final rendering.
+- Quality first: expressive character acting, cinematic composition, coherent environments, reusable assets.
+- Story direction and production orchestration happen inside the agent skill.
+- Assets are linked by stable IDs and versions; shots are structured data.
+- Incremental rendering uses content hashes to avoid rebuilding unchanged shots.
+- Original visual identity; references are high-level guidance, never templates to copy.
+- Source script and voiceover remain unchanged.
+- A passing plan or preview is not a finished video.
 
-## Status
+## Implementation status
 
-| Phase | Status |
+| Capability | Status |
 |---|---|
-| 1. Art direction | **Open**: look-dev v0 rendered ([report](docs/LOOKDEV-REPORT.md)), awaiting approval |
-| 2. 3D foundation | Not started |
-| 3. Pilot (30–60 s) | Not started |
-| 4. Production engine | Scaffolded: `validate`, `jobs`, `blender/scripts/assemble_shot.py` (untested) |
-| 5–6. QA system, full production | Not started |
+| Audio probing + local phrase transcription | Implemented (FFprobe + Whisper.cpp) |
+| Script/transcript comparison + pause map | Implemented |
+| Story-plan schema and local validation | Implemented |
+| AI story direction inside the skill | Skill workflow; agent authors the plan directly |
+| Asset registry + render cache planning | Implemented |
+| Blender scene assembly | Starter only; real asset linking and animation are not production-verified |
+| Character rig, authored animation library, environment/prop library | Not production-ready |
+| Automated rendering, compositing, editing, audio mix | Incomplete |
+| Motion QA, contact sheets, final-video QC | Incomplete |
+| End-to-end production of a 5–8 minute video | Not yet production-ready |
 
-## Agent skill
-
-The repository includes [`generate-3d-video`](.agents/skills/generate-3d-video/SKILL.md), an agent workflow designed around a simple input contract:
-
-- `script.md`
-- `voiceover.wav` (or another supported audio format)
-
-The skill directs an agent through audio analysis and script alignment, story direction, timed shot planning, reusable asset resolution, Blender scene production, preview/final rendering, visual QA, and final video assembly. See its [production pipeline](.agents/skills/generate-3d-video/workflows/production-pipeline.md).
-
-**Current implementation boundary:** audio probing and phrase-level transcription are implemented through FFprobe + Whisper.cpp. Shot planning, Blender animation/rendering, visual QA automation, and final editing remain incomplete/scaffolded; the skill must report blocked stages rather than fabricate a finished render.
+The current repository is an evolving production engine, not yet a verified push-button end-to-end renderer. The skill must execute supported stages and report blockers honestly.
 
 ## Quick start
 
-Requires Node.js ≥ 20. Audio analysis additionally requires FFprobe, Whisper.cpp `whisper-cli`, and a downloaded Whisper.cpp model. Blender is only needed for assembling/rendering shots.
+Requires Node.js 20+. Install dependencies and run the checks:
 
 ```bash
-npm install
-npm test                       # schema, reference, and caching tests
-npm run validate               # assets + project config + shots
-npm run validate:strict        # pre-final-render gate: assets must be approved with real files
-npm run jobs -- --quality preview   # which shots need rendering vs cached\nnpm run analyze-audio -- --project pilot-video --audio projects/pilot-video/audio/voiceover.wav --script projects/pilot-video/script/script.md --model models/ggml-base.en.bin
+npm ci
+npm test
+npm run validate
 ```
 
-Render the look-dev test shots (Python 3.11 + `bpy`, see [report](docs/LOOKDEV-REPORT.md)):
+Provide the script and voiceover to the `generate-3d-video` skill. The skill derives the project name, uses configured project defaults, and runs the full workflow. No API setup is required.
+
+### Local audio dependencies
+
+Audio analysis uses FFprobe, Whisper.cpp `whisper-cli`, and a local Whisper.cpp model. Set `WHISPER_CLI`, `FFPROBE`, or `WHISPER_MODEL` only when the local executable/model is not on its default path. These are local tool configuration values, not external service credentials.
+
+The transcript is written to `projects/<project>/analysis/transcript.json`; source audio and script are preserved.
+
+### Story-plan validation
+
+The agent writes `projects/<project>/story/shot-plan.json` and validates it with:
+
+```bash
+npm run validate:story -- --project <project>
+```
+
+The validator checks schema, narration coverage, timing, beat/shot relationships, overlaps, gaps, and registered asset/animation/expression references.
+
+## Blender look development
+
+Python 3.11 + Blender's `bpy` are required:
 
 ```bash
 pip install -r blender/requirements.txt
 python blender/scripts/lookdev.py --out renders/lookdev --res 1280x720 --samples 32
 ```
 
-Assemble a single shot (needs Blender and real asset `.blend` files):
+The current `assemble_shot.py` is a foundation script, not a complete animation renderer. It still needs real approved asset libraries, rig/action application, camera animation, lighting presets, and render orchestration before it can be used for final production.
 
-```bash
-blender -b -P blender/scripts/assemble_shot.py -- \
-  --shot projects/pilot-video/shots/shot_001.json \
-  --project projects/pilot-video/project.json \
-  --out projects/pilot-video/scenes/shot_001.blend
-```
+## Production architecture
 
-Audio analysis writes `projects/<name>/analysis/transcript.json` with media metadata, phrase timestamps, inter-phrase gaps, and a script/transcript token comparison. Set `WHISPER_MODEL` to use a default model path, or pass `--model` as shown. The original audio and script are not modified.\n\n## Docs
+See [Architecture](docs/ARCHITECTURE.md), [Roadmap](docs/ROADMAP.md), [Art Direction](docs/ART-DIRECTION.md), [Character Bible](docs/CHARACTER-BIBLE.md), [Asset Standards](docs/ASSET-STANDARDS.md), [Shot Specification](docs/SHOT-SPECIFICATION.md), and [Quality Standards](docs/QUALITY-STANDARDS.md).
 
-[Architecture](docs/ARCHITECTURE.md) · [Roadmap](docs/ROADMAP.md) · [Art Direction](docs/ART-DIRECTION.md) · [Character Bible](docs/CHARACTER-BIBLE.md) · [Asset Standards](docs/ASSET-STANDARDS.md) · [Shot Specification](docs/SHOT-SPECIFICATION.md) · [Quality Standards](docs/QUALITY-STANDARDS.md) · [Decision Log](docs/DECISION-LOG.md) · [Reference Analysis](docs/REFERENCE-ANALYSIS.md) · [Look-dev Report](docs/LOOKDEV-REPORT.md)
-
-## Relationship to d2-video
-
-`d2-video` stays separate and stable. We reuse its proven concepts (script processing, voiceover/timing, orchestration, visual QA workflow) and replace its 2D renderer, character system, and composition assets.
+The `generate-3d-video` agent skill defines the user-facing workflow and must report incomplete stages honestly.
