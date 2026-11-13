@@ -70,8 +70,8 @@ class RenderPilotTests(unittest.TestCase):
     def test_orchestrator_encodes_numbered_png_frames_with_ffmpeg(self):
         orchestrator = (SCRIPT_DIR / "render_pilot.py").read_text(encoding="utf-8")
         self.assertIn('"frame_%04d.png"', orchestrator)
-        self.assertIn('" -framerate"', orchestrator.replace('" -framerate"', '"-framerate"'))
-        self.assertIn('" -frames:v"', orchestrator.replace('" -frames:v"', '"-frames:v"'))
+        self.assertIn('"-framerate"', orchestrator)
+        self.assertIn('"-frames:v"', orchestrator)
         self.assertIn('len(frame_files) != expected_frames', orchestrator)
 
     def test_probes_duration_and_stream_metadata(self):
