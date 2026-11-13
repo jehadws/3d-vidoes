@@ -150,16 +150,34 @@ def main():
     rendered = []
     for shot_file, shot in shots:
         shot_output = render_dir / f"{shot['id']}.mp4"
-        shot_output.unlink(missing_ok=True)
+        frame_dir = render_dir / f"{shot['id']}_frames"
+        if frame_dir.exists():
+            shutil.rmtree(frame_dir)
+        frame_dir.mkdir(parents=True)
         command = [
             blender, "-b", "-P", str(BLENDER_SCRIPT), "--",
             "--shot", str(shot_file), "--project", str(config_file),
-            "--out", str(shot_output), "--quality", args.quality
+            "--out", str(frame_dir), "--quality", args.quality
         ]
         print(f"[render] {shot['id']} ({shot['duration']:.2f}s)")
         run(command)
+        expected_frames = max(2, round(float(shot["duration"]) * fps))
+        frame_pattern = frame_dir / "frame_%04d.png"
+        frame_files = sorted(frame_dir.glob("frame_*.png"))
+        if len(frame_files) != expected_frames:
+            raise PipelineError(
+                f"Blender frame count mismatch for {shot['id']}: expected {expected_frames}, found {len(frame_files)}."
+            )
+        run([
+            ffmpeg, "-y", "-hide_banner", "-loglevel", "error",
+            "-framerate", str(fps), "-start_number", "1", "-i", str(frame_pattern),
+            "-frames:v", str(expected_frames), "-an",
+            "-c:v", "libx264", "-preset", "medium" if args.quality == "final" else "veryfast",
+            "-crf", "18" if args.quality == "final" else "25", "-pix_fmt", "yuv420p",
+            "-r", str(fps), "-movflags", "+faststart", str(shot_output)
+        ])
         if not shot_output.is_file() or shot_output.stat().st_size == 0:
-            raise PipelineError(f"Blender reported success but did not produce {shot_output}")
+            raise PipelineError(f"FFmpeg did not produce a non-empty shot video: {shot_output}")
         rendered.append(shot_output)
 
     concat_file = render_dir / "concat.txt"

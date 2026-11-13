@@ -58,6 +58,22 @@ class RenderPilotTests(unittest.TestCase):
             with self.assertRaisesRegex(render_pilot.PipelineError, "unique"):
                 render_pilot.read_shots(project)
 
+
+    def test_blender_renderer_uses_runtime_eevee_enum_and_png_frames(self):
+        renderer = (SCRIPT_DIR / "vertical_slice.py").read_text(encoding="utf-8")
+        self.assertIn('scene.render.bl_rna.properties["engine"].enum_items', renderer)
+        self.assertIn('scene.render.image_settings.file_format = "PNG"', renderer)
+        self.assertIn('scene.render.filepath = os.path.join(frame_dir, "frame_")', renderer)
+        self.assertNotIn('scene.render.image_settings.file_format = "FFMPEG"', renderer)
+        self.assertNotIn('scene.render.ffmpeg.codec', renderer)
+
+    def test_orchestrator_encodes_numbered_png_frames_with_ffmpeg(self):
+        orchestrator = (SCRIPT_DIR / "render_pilot.py").read_text(encoding="utf-8")
+        self.assertIn('"frame_%04d.png"', orchestrator)
+        self.assertIn('"-framerate"', orchestrator)
+        self.assertIn('"-frames:v"', orchestrator)
+        self.assertIn('len(frame_files) != expected_frames', orchestrator)
+
     def test_probes_duration_and_stream_metadata(self):
         payload = {"format": {"duration": "12.5"}, "streams": [{"codec_type": "video", "width": 1920}]}
         with patch.object(render_pilot, "run", return_value=json.dumps(payload)):
