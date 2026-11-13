@@ -181,7 +181,7 @@ def build_character(collection):
     add_sphere("hair_tuft", (-0.12, -0.03, 2.06), (0.10, 0.12, 0.13), accent, collection, (rig, "head"))
     for side in (-1, 1):
         add_sphere("eye", (side * 0.105, -0.264, 1.76), (0.035, 0.018, 0.052), ink, collection, (rig, "head"), 20)
-        add_sphere("shoe", (side * 0.14, -0.07, 0.075), (0.12, 0.20, 0.075), shoe, collection, (rig, "root"), 24)
+        add_sphere("shoe", (side * 0.14, -0.07, 0.075), (0.12, 0.20, 0.075), shoe, collection, (rig, "shin.L" if side < 0 else "shin.R"), 24)
         add_capsule("upper_arm", (side * 0.30, 0, 1.28), (side * 0.52, 0, 1.03), 0.085, jacket, collection, (rig, "upper_arm.L" if side < 0 else "upper_arm.R"))
         add_sphere("hand", (side * 0.57, -0.01, 0.77), (0.085, 0.075, 0.09), skin, collection, (rig, "forearm.L" if side < 0 else "forearm.R"))
         add_capsule("forearm", (side * 0.52, 0, 1.03), (side * 0.57, -0.01, 0.78), 0.065, skin, collection, (rig, "forearm.L" if side < 0 else "forearm.R"))
@@ -315,7 +315,10 @@ def build_camera(scene, shot, frame_end):
     camera_data.dof.use_dof = False
     kind = shot.get("camera", {}).get("type", "medium")
     distance = {"wide": 7.0, "medium": 4.7, "close_up": 3.0, "extreme_close_up": 2.2, "over_shoulder": 3.8, "top_down": 7.0}.get(kind, 4.7)
-    start = Vector((0.8, -distance, 2.25 if kind in ("wide", "medium") else 1.95))
+    if kind == "top_down":
+        start = Vector((0.0, -0.1, 7.0))
+    else:
+        start = Vector((0.8, -distance, 2.25 if kind in ("wide", "medium") else 1.95))
     end = start.copy()
     movement = shot.get("camera", {}).get("movement", "static")
     target_start = Vector((0, 0, 1.05 if kind in ("wide", "medium") else 1.65))
