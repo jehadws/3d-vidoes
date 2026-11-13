@@ -1,79 +1,57 @@
 # Visual Direction and Shot Planning
 
-## AI story director
+## Inputs and authority
 
-After narration analysis, run:
+The user supplies only a script and its voiceover. The agent performs all creative planning internally. Do not request a story API key, model/provider selection, third-party service, or separate story-director configuration.
 
-```bash
-npm run direct-story -- --project <project-name>
-```
+The voiceover is authoritative for actual words, delivery, pauses, and timing. The script is authoritative for intended story structure and wording. Where they differ, preserve what was actually spoken and document the discrepancy.
 
-Configure `STORY_DIRECTOR_API_KEY` and `STORY_DIRECTOR_MODEL`; optionally set `STORY_DIRECTOR_API_URL` to an OpenAI-compatible chat-completions endpoint. The command reads the project script and `analysis/transcript.json`, inventories registered assets, requests schema-constrained JSON, validates the result locally, and writes `story/shot-plan.json`.
+## Story bible
 
-The generated plan contains the premise, audience promise, visual motifs, emotional arc, continuity rules, ending image, narration-linked story beats, and timed shots. Validation checks schema shape, unique IDs, full transcript-to-beat coverage, beat-to-shot references, timing bounds, shot overlap, and registered asset types/animation/expression references.
+Create `projects/<slug>/story/bible.md` with:
+- Logline and audience promise.
+- Central question and intended emotional payoff.
+- Protagonist objective, personality, and emotional progression.
+- Cast and stable visual identities.
+- Locations, environment moods, and key lights.
+- Recurring visual motifs and visual escalation.
+- Camera and composition language.
+- Continuity rules and ending image.
 
-A successful command means the plan is structurally and temporally valid. It does **not** mean the art direction, assets, animation, or video are approved. Review the output before scene production. If the script/transcript comparison is poor, resolve the narration mismatch rather than asking the director to conceal it.
-
-## Director's brief
-
-Before writing or approving shots, define:
-- The premise and central question.
-- What the viewer should understand or feel at the end.
-- The protagonist's immediate objective and emotional change.
-- The visual metaphor or recurring motif, if useful.
-- The visual escalation from opening hook to payoff.
-- The final image or action that gives the video closure.
-
-Use the repository's approved art direction and character bible. If these are still proposed or incomplete, do not silently treat them as approved.
+Use the repository's approved art direction and character bible. Do not silently treat concept art as approved production design.
 
 ## Beat sheet
 
-For each beat record:
-- Stable beat ID.
-- Narration start/end and segment references.
-- What the narration communicates.
-- What the viewer sees.
-- Character intention and emotion.
-- Environment and asset needs.
-- How the beat transitions to the next one.
+Create a small number of meaningful beats based on:
+- New information or story action.
+- Emotional intention and character objective.
+- Location/time changes.
+- Reveals, contrasts, escalation, and payoff.
+- Pauses and emphasis in the actual narration.
 
-Every spoken section should have a visual purpose. Avoid literal word-for-word illustration when a stronger action or metaphor communicates the idea.
+Each beat has a stable ID, title, purpose, start/end timestamps, transcript segment IDs, visual concept, and character direction.
+
+Every transcript segment must belong to exactly one beat. Do not force one beat per sentence or one shot per transcript phrase.
 
 ## Shot design
 
-Build a sequence with intentional variety:
-- Establishing wides to orient the viewer.
-- Medium shots for action and interaction.
-- Close-ups for reactions and important details.
-- Over-the-shoulder and point-of-view shots when they clarify perspective.
-- Insert shots for meaningful props or visual evidence.
-- Occasional composed hero frames for major reveals.
-
-Use camera movement only when it supports the action or emotion. Static framing is valid and often stronger than constant movement.
-
-For each shot specify:
-- ID, beat ID, narration time range, and narration segment references.
-- Environment, characters, props, and supported animation/expression IDs.
+Each shot should be visually specific and achievable. Include:
+- Stable shot ID and parent beat ID.
+- Start/end timestamps and transcript segment IDs.
+- Environment, character, prop, and asset references.
 - Character blocking, action, pose, and expression.
-- Camera type, angle, lens intent, and movement.
+- Camera type, lens intent, angle, and motivated movement.
 - Lighting and foreground/midground/background composition.
-- Transitions and continuity requirements.
+- Transition in/out and continuity notes.
 
-## Continuity
+Vary establishing wides, medium action shots, close-ups, inserts, over-the-shoulder, POV, and dramatic reveals when the story benefits. Static cameras are valid; never add movement only for variety.
 
-Maintain character identity and proportions; position, screen direction, eyelines, and movement direction; prop ownership and state; environment layout and lighting motivation; camera axis and spatial geography; and consistent material/color treatment.
+## Continuity and production constraints
 
-## Originality
+Maintain identity, proportions, screen direction, eyelines, spatial geography, prop state, scale, lighting logic, and material/color treatment. Use registered asset IDs and supported animation/expression names. New asset requirements must be identified explicitly and created/registered before final scene assembly.
 
-Use references to understand broad visual principles, not to reproduce recognizable designs. Create original character silhouettes, faces, costumes, environments, props, graphic overlays, and compositions.
+## Validation
 
-## Shot plan acceptance
+Run `npm run validate:story -- --project <slug>`. The validator checks schema, unique IDs, transcript coverage, beat/shot relationships, timing bounds, overlaps, gaps, narration-to-shot coverage, and asset/animation/expression references.
 
-- All transcript segments appear in exactly one beat and at least one shot.
-- Shot IDs and beat IDs are unique.
-- Every shot belongs to a known beat and remains inside its beat's timing.
-- No shot overlaps another shot.
-- Every asset reference exists and matches its required type.
-- Character actions use registered animation/expression names when those fields are supplied.
-- Shot complexity is achievable with the current asset and animation library.
-- A short pilot proves the style before planning a long production at full detail.
+A valid plan is not proof that the video is visually good or rendered. Review the story bible and shot plan internally, then continue production autonomously.
