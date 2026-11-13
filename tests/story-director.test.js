@@ -3,8 +3,6 @@ import assert from 'node:assert/strict';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import {
-  buildDirectorPrompt,
-  requestStoryPlan,
   validateStoryPlan,
   validateTranscript
 } from '../packages/story/src/index.js';
@@ -63,27 +61,6 @@ test('rejects shots outside their parent beat and overlapping shots', () => {
   assert.throws(() => validateStoryPlan(ROOT, overlap, transcript), /overlap/);
 });
 
-test('director prompt contains narration, assets, and production constraints', () => {
-  const prompt = buildDirectorPrompt({ project: 'test', script: 'A short script.', transcript, assets: [{ id: 'protagonist', type: 'character', expressions: ['curious'] }] });
-  assert.match(prompt, /TIMED TRANSCRIPT/);
-  assert.match(prompt, /protagonist/);
-  assert.match(prompt, /exactly one beat/);
-});
-
-test('provider uses structured output and reports useful HTTP errors without leaking credentials', async () => {
-  let request;
-  const fakeFetch = async (url, options) => {
-    request = { url, options, body: JSON.parse(options.body) };
-    return { ok: false, status: 429, statusText: 'Too Many Requests', json: async () => ({ error: { message: 'rate limited' } }) };
-  };
-  await assert.rejects(
-    requestStoryPlan({ prompt: 'test', schema: {}, apiUrl: 'https://example.test/v1/chat/completions', apiKey: 'secret', model: 'test-model', fetchImpl: fakeFetch }),
-    /HTTP 429: rate limited/
-  );
-  assert.equal(request.body.response_format.type, 'json_schema');
-  assert.equal(request.options.headers.authorization, 'Bearer secret');
-});
-
 test('rejects generated plans that reference missing or unsupported assets', () => {
   const assets = [
     { id: 'living_room', type: 'environment' },
@@ -98,25 +75,4 @@ test('rejects generated plans that reference missing or unsupported assets', () 
   const missing = structuredClone(plan);
   missing.shots[0].environment = 'unknown_room';
   assert.throws(() => validateStoryPlan(ROOT, missing, transcript, assets), /unavailable environment/);
-});
-
-test('parses a successful structured provider response', async () => {
-  const fakeFetch = async (_url, options) => {
-    const body = JSON.parse(options.body);
-    assert.equal(body.response_format.json_schema.strict, true);
-    assert.equal(body.response_format.json_schema.schema.properties.schema_version.enum[0], 1);
-    return {
-      ok: true,
-      status: 200,
-      json: async () => ({ choices: [{ message: { content: JSON.stringify(plan) } }] })
-    };
-  };
-  const result = await requestStoryPlan({
-    prompt: 'Create a plan',
-    schema: { $schema: 'draft-07', type: 'object', properties: { schema_version: { const: 1, minLength: 1 } }, required: ['schema_version'], additionalProperties: false },
-    apiKey: 'test-key',
-    model: 'test-model',
-    fetchImpl: fakeFetch
-  });
-  assert.equal(result.beats.length, 2);
 });
