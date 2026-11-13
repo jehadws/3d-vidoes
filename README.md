@@ -33,22 +33,25 @@ No separate story-director API, hosted model provider, API key, or third-party g
 | Story-plan schema and local validation | Implemented |
 | AI story direction inside the skill | Skill workflow; agent authors the plan directly |
 | Asset registry + render cache planning | Implemented |
-| Blender scene assembly | Starter only; real asset linking and animation are not production-verified |
-| Character rig, authored animation library, environment/prop library | Not production-ready |
-| Automated rendering, compositing, editing, audio mix | Incomplete |
-| Motion QA, contact sheets, final-video QC | Incomplete |
+| Procedural rigged protagonist + pose actions | First vertical-slice implementation; Blender runtime validation pending |
+| Procedural indoor/outdoor set dressing + lighting | First vertical-slice implementation; visual approval pending |
+| Shot camera motion + per-shot Blender MP4 render | Implemented in the vertical-slice renderer; runtime validation pending |
+| Voiceover mux + output stream/duration checks | Implemented in the local pilot orchestrator; runtime validation pending |
+| Contact sheets, motion QA, human visual approval | Incomplete |
+| Full 30–60 second pilot | Not yet produced and reviewed |
 | End-to-end production of a 5–8 minute video | Not yet production-ready |
 
-The current repository is an evolving production engine, not yet a verified push-button end-to-end renderer. The skill must execute supported stages and report blockers honestly.
+The current branch adds an executable first renderer, but the full workflow is not considered production-ready until Blender rendering is exercised on a real machine and the resulting motion is visually reviewed.
 
 ## Quick start
 
-Requires Node.js 20+. Install dependencies and run the checks:
+Requires Node.js 20+, Python 3.11+, Blender, FFmpeg, and FFprobe. Install dependencies and run the checks:
 
 ```bash
 npm ci
 npm test
 npm run validate
+python -m unittest tests/test_render_pilot.py
 ```
 
 Provide the script and voiceover to the `generate-3d-video` skill. The skill derives the project name, uses configured project defaults, and runs the full workflow. No API setup is required.
@@ -67,9 +70,19 @@ The agent writes `projects/<project>/story/shot-plan.json` and validates it with
 npm run validate:story -- --project <project>
 ```
 
-The validator checks schema, narration coverage, timing, beat/shot relationships, overlaps, gaps, and registered asset/animation/expression references.
+The validator checks schema, narration coverage, timing, beat/shot relationships, overlaps, gaps, and registered asset/animation/expression references. The skill then converts approved story shots into renderer shot specs in `projects/<project>/shots/`.
 
-## Blender look development
+### First Blender vertical slice
+
+The current renderer creates a rigged stylized protagonist, pose-based walking/talking/reacting/pointing/idle actions, a procedural environment, a moving camera, lighting, and one H.264 MP4 per shot. The local orchestrator concatenates shots, muxes the original voiceover, and verifies the final media streams and duration.
+
+```bash
+npm run render:pilot -- --project <project> --audio path/to/voiceover.wav --quality preview
+```
+
+Use `--quality final` after the preview has been visually reviewed. Shot durations must cover the voiceover duration; the renderer refuses to silently stretch or cut narration. The current renderer is a first vertical slice, not a replacement for approved reusable asset libraries, contact-sheet review, or the complete production QA system.
+
+### Blender look development
 
 Python 3.11 + Blender's `bpy` are required:
 
@@ -78,7 +91,7 @@ pip install -r blender/requirements.txt
 python blender/scripts/lookdev.py --out renders/lookdev --res 1280x720 --samples 32
 ```
 
-The current `assemble_shot.py` is a foundation script, not a complete animation renderer. It still needs real approved asset libraries, rig/action application, camera animation, lighting presets, and render orchestration before it can be used for final production.
+The older `assemble_shot.py` remains a starter asset-linking path. The first runnable procedural shot renderer is `blender/scripts/vertical_slice.py`, orchestrated by `blender/scripts/render_pilot.py`.
 
 ## Production architecture
 
