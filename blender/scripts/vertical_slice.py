@@ -364,16 +364,25 @@ def main():
     scene.render.resolution_x = int(resolution["width"])
     scene.render.resolution_y = int(resolution["height"])
     scene.render.resolution_percentage = 55 if args.quality == "preview" else 100
-    scene.render.engine = "BLENDER_EEVEE_NEXT"
-    scene.render.image_settings.file_format = "FFMPEG"
-    scene.render.ffmpeg.format = "MPEG4"
-    scene.render.ffmpeg.codec = "H264"
-    scene.render.ffmpeg.constant_rate_factor = "MEDIUM" if args.quality == "preview" else "HIGH"
-    scene.render.ffmpeg.ffmpeg_preset = "GOOD"
+    # Blender's EEVEE identifier changed across releases. Resolve it from
+    # the runtime enum instead of assuming a version-specific name.
+    engine_items = scene.render.bl_rna.properties["engine"].enum_items
+    available_engines = {item.identifier for item in engine_items}
+    engine = next((name for name in ("BLENDER_EEVEE_NEXT", "BLENDER_EEVEE") if name in available_engines), None)
+    if engine is None:
+        raise RuntimeError(f"No supported EEVEE render engine. Available: {sorted(available_engines)}")
+    scene.render.engine = engine
+
+    # Blender 5.x may expose FFMPEG in docs but reject selecting it from
+    # background/factory-startup sessions. Render deterministic PNG frames;
+    # the Node/Python orchestrator encodes them with the installed FFmpeg.
+    scene.render.image_settings.file_format = "PNG"
+    scene.render.image_settings.color_mode = "RGB"
     scene.render.film_transparent = False
     scene.view_settings.view_transform = "AgX"
-    scene.render.image_settings.color_mode = "RGB"
-    scene.render.filepath = os.path.abspath(args.out)
+    frame_dir = os.path.abspath(args.out)
+    os.makedirs(frame_dir, exist_ok=True)
+    scene.render.filepath = os.path.join(frame_dir, "frame_")
     scene.render.use_file_extension = True
 
     world = bpy.data.worlds.new("studio_world")
@@ -411,9 +420,12 @@ def main():
     add_lighting(scene, shot.get("lighting", "late_afternoon"))
     build_camera(scene, shot, frame_end)
     scene.frame_set(1)
-    os.makedirs(os.path.dirname(os.path.abspath(args.out)), exist_ok=True)
+    os.makedirs(os.path.abspath(args.out), exist_ok=True)
     bpy.ops.render.render(animation=True)
-    print("VERTICAL_SLICE_RENDERED", shot["id"], args.out, duration, fps)
+    frame_count = len([name for name in os.listdir(os.path.abspath(args.out)) if name.endswith(".png")])
+    if frame_count != frame_end:
+        raise RuntimeError(f"Expected {frame_end} PNG frames, found {frame_count} in {args.out}")
+    print("VERTICAL_SLICE_FRAMES_RENDERED", shot["id"], args.out, frame_count, duration, fps)
 
 
 if __name__ == "__main__":
