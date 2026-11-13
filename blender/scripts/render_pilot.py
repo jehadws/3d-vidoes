@@ -8,6 +8,8 @@ Requires local Blender, FFmpeg, and FFprobe. No network services are used.
 """
 import argparse
 import json
+import math
+import re
 import os
 import shutil
 import subprocess
@@ -61,14 +63,33 @@ def read_shots(project_dir):
             shot = json.loads(file_path.read_text(encoding="utf-8"))
         except (OSError, json.JSONDecodeError) as error:
             raise PipelineError(f"Cannot read shot spec {file_path}: {error}") from error
-        if not isinstance(shot.get("id"), str) or not shot["id"].startswith("shot_"):
-            raise PipelineError(f"{file_path}: id must start with 'shot_'.")
-        if not isinstance(shot.get("duration"), (int, float)) or shot["duration"] <= 0:
-            raise PipelineError(f"{file_path}: duration must be greater than zero.")
-        if not isinstance(shot.get("camera"), dict) or shot["camera"].get("type") not in {
+        if not isinstance(shot, dict):
+            raise PipelineError(f"{file_path}: shot must be a JSON object.")
+        if not isinstance(shot.get("id"), str) or not re.fullmatch(r"shot_\d{3,}", shot["id"]):
+            raise PipelineError(f"{file_path}: id must match shot_ followed by at least three digits.")
+        duration = shot.get("duration")
+        if not isinstance(duration, (int, float)) or not math.isfinite(duration) or duration <= 0:
+            raise PipelineError(f"{file_path}: duration must be a finite number greater than zero.")
+        if shot.get("environment") not in {"city_street", "interior_room", "living_room"}:
+            raise PipelineError(f"{file_path}: vertical-slice environment must be city_street, interior_room, or living_room.")
+        camera = shot.get("camera")
+        if not isinstance(camera, dict) or camera.get("type") not in {
             "wide", "medium", "close_up", "extreme_close_up", "over_shoulder", "top_down"
         }:
             raise PipelineError(f"{file_path}: camera.type is missing or unsupported.")
+        if camera.get("movement", "static") not in {"static", "pan", "tilt", "tracking", "dolly_in", "dolly_out", "orbit"}:
+            raise PipelineError(f"{file_path}: camera.movement is unsupported.")
+        characters = shot.get("characters")
+        if not isinstance(characters, list) or len(characters) != 1 or not isinstance(characters[0], dict) or characters[0].get("asset") != "protagonist":
+            raise PipelineError(f"{file_path}: this vertical slice currently requires exactly one protagonist character.")
+        character = characters[0]
+        if character.get("animation", "idle") not in {"idle", "walking", "running", "talking", "reacting", "pointing"}:
+            raise PipelineError(f"{file_path}: unsupported protagonist animation.")
+        if character.get("expression", "neutral") not in {"neutral", "curious", "happy", "surprised"}:
+            raise PipelineError(f"{file_path}: unsupported protagonist expression.")
+        props = shot.get("props", [])
+        if not isinstance(props, list) or any(prop != "mystery_orb" for prop in props):
+            raise PipelineError(f"{file_path}: this vertical slice currently supports only the mystery_orb prop.")
         shots.append((file_path, shot))
     ids = [shot["id"] for _, shot in shots]
     if len(ids) != len(set(ids)):
@@ -86,7 +107,10 @@ def parse_args():
     parser.add_argument("--ffprobe", default=os.environ.get("FFPROBE", "ffprobe"))
     parser.add_argument("--output", help="Output MP4 path (defaults to projects/<project>/output/pilot.mp4)")
     parser.add_argument("--duration-tolerance", type=float, default=0.25)
-    return parser.parse_args()
+    args = parser.parse_args()
+    if args.duration_tolerance < 0:
+        parser.error("--duration-tolerance must be non-negative")
+    return args
 
 
 def main():
@@ -125,6 +149,7 @@ def main():
     rendered = []
     for shot_file, shot in shots:
         shot_output = render_dir / f"{shot['id']}.mp4"
+        shot_output.unlink(missing_ok=True)
         command = [
             blender, "-b", "-P", str(BLENDER_SCRIPT), "--",
             "--shot", str(shot_file), "--project", str(config_file),
@@ -160,6 +185,9 @@ def main():
     final_duration = float(final_probe.get("format", {}).get("duration", 0))
     if not video or not audio:
         raise PipelineError("Final MP4 is missing a video or audio stream.")
+    expected_resolution = config.get("resolution", {"width": 1920, "height": 1080})
+    if video.get("width") != int(expected_resolution["width"]) or video.get("height") != int(expected_resolution["height"]):
+        raise PipelineError(f"Final resolution {video.get('width')}x{video.get('height')} does not match project settings.")
     if abs(final_duration - audio_duration) > max(args.duration_tolerance, 1.0 / fps):
         raise PipelineError(
             f"Final duration {final_duration:.3f}s differs from voiceover {audio_duration:.3f}s."
