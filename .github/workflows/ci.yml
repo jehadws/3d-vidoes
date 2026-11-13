@@ -6,6 +6,7 @@ on:
       - main
       - feat/audio-analysis-engine
       - feat/ai-story-director
+      - feat/blender-vertical-slice
   pull_request:
     branches:
       - main
@@ -21,6 +22,10 @@ jobs:
         with:
           node-version: 20
           cache: npm
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
       - name: Install dependencies
         run: npm ci
       - name: Check JavaScript syntax
@@ -30,7 +35,11 @@ jobs:
           node --check packages/story/src/index.js
           node --check tests/audio-analysis.test.js
           node --check tests/story-director.test.js
-      - name: Run tests
+      - name: Check Blender pipeline Python syntax
+        run: python -m py_compile blender/scripts/vertical_slice.py blender/scripts/render_pilot.py
+      - name: Test render orchestration
+        run: python -m unittest discover -s tests -p "test_*.py"
+      - name: Run Node tests
         run: npm test
       - name: Validate pilot project
         run: npm run validate

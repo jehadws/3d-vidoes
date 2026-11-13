@@ -9,11 +9,23 @@ Check:
 - Render engine and supported features.
 - Project FPS, resolution, color management, frame range, and output format.
 - GPU availability and render-device configuration.
-- Required asset files and linked libraries.
+- Required local FFmpeg/FFprobe executables.
 
-## Asset-first scene assembly
+## First executable vertical slice
 
-Resolve assets by stable registry ID and version. Prefer linked/reused assets over duplicated models. Record the asset dependencies for each shot.
+The repository now includes a procedural shot renderer and local pilot orchestrator:
+
+- `blender/scripts/vertical_slice.py` builds a rigged stylized protagonist, pose actions, expressions, environment, prop, lighting, and camera movement, then renders one H.264 shot.
+- `blender/scripts/render_pilot.py` renders the project's shot specs, concatenates the shot files, muxes the original voiceover, and checks the resulting media streams and duration.
+- Run it with `npm run render:pilot -- --project <slug> --audio <voiceover-file> --quality preview`.
+
+The current procedural renderer is a controlled first slice, not the final reusable asset library. It provides actual rig-driven pose motion and camera keyframes, but the generated design and acting still require visual review. The script uses a compact procedural indoor/outdoor environment and a consistent stylized palette so the first run does not depend on downloaded assets.
+
+Before running, ensure the skill has converted the approved story plan into `projects/<slug>/shots/*.json` using the existing shot schema. Shot durations must sum to the source voiceover duration within 0.25 seconds. The orchestrator deliberately refuses to trim or stretch the narration to hide a planning mismatch.
+
+## Asset-first production path
+
+As the asset library matures, resolve reusable approved assets by stable registry ID and version. Prefer linked/reused assets over duplicated models. Record the asset dependencies for each shot.
 
 For each shot:
 1. Load the approved scene/template.
@@ -40,22 +52,12 @@ Avoid relying on a generic idle loop for every character. Avoid unmotivated proc
 
 ## Render policy
 
-Use the project's configured preview and final profiles. The current reference analysis suggests testing Eevee for the project's soft stylized look; do not switch the production default without a documented look-dev comparison and approval.
+Use the project's configured FPS and resolution. The vertical-slice renderer currently uses Eevee Next for predictable local previews and MP4 output; do not promote that choice to the final production default without a documented look-dev comparison and approval.
 
-Render to temporary or project render directories, never over source assets. Use stable frame ranges and deterministic output naming. Record the Blender command, scene, settings, and exit status.
+Render to project render directories, never over source assets. Record the Blender command, scene settings, and exit status.
 
-## Caching
+## Validation boundary
 
-A render cache key should include all inputs that can change the output:
-- Shot specification.
-- Blender scene and linked asset versions.
-- Animation data.
-- Camera and lighting settings.
-- Render profile and Blender version.
-- Relevant compositing settings.
+The orchestrator performs technical checks: shot input structure, duration coverage, process exit codes, output existence, video/audio stream presence, and final duration. It does not perform human visual review, contact-sheet inspection, motion scoring, or final artistic approval. A successful MP4 encode is not proof of visual quality.
 
-If any dependency changes, invalidate the affected shot. Do not reuse a stale render merely because a file with the expected name exists.
-
-## Current repository capability warning
-
-The production engine currently has a scaffolded job planner and Blender assembly entry point. Inspect their implementation and tests before use. If actual animation, scene assembly, or rendering is not implemented or verified, report that limitation and create the missing handoff artifacts rather than claiming production succeeded.
+The previous `assemble_shot.py` remains a scaffolded asset-linking entry point. If the new renderer fails on the installed Blender version, report the exact Blender error and do not mark the shot as rendered.
