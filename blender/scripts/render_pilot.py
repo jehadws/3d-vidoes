@@ -173,10 +173,11 @@ def main():
         ffmpeg, "-y", "-hide_banner", "-loglevel", "error",
         "-f", "concat", "-safe", "0", "-i", str(concat_file),
         "-i", str(audio_file), "-map", "0:v:0", "-map", "1:a:0",
+        "-vf", "tpad=stop_mode=clone:stop_duration=1",
         "-c:v", "libx264", "-preset", "medium" if args.quality == "final" else "veryfast",
         "-crf", "18" if args.quality == "final" else "25", "-pix_fmt", "yuv420p",
         "-r", str(fps), "-c:a", "aac", "-b:a", "192k",
-        "-shortest", "-movflags", "+faststart", str(output)
+        "-t", f"{audio_duration:.6f}", "-movflags", "+faststart", str(output)
     ])
 
     final_probe = probe_media(ffprobe, output)
